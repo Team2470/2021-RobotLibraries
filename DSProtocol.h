@@ -26,16 +26,16 @@
 // Joystick 2 Packet - !J[button word][leftXAxis][leftYAxis][rightXAxis][rightYAxis][triggerLeftAxis][triggerRightAxis][checksum][cr][lf]
 #define MSGID_DS_JOYSTICK_1 'j'
 #define MSGID_DS_JOYSTICK_2 'J'
-#define DS_JOYSTICK_LENGTH                20  
+#define DS_JOYSTICK_LENGTH                22  
 #define DS_JOYSTICK_BUTTON_WORD_INDEX     2
-#define DS_JOYSTICK_LEFT_X_AXIS_INDEX     4
-#define DS_JOYSTICK_LEFT_Y_AXIS_INDEX     6
-#define DS_JOYSTICK_RIGHT_X_AXIS_INDEX    8
-#define DS_JOYSTICK_RIGHT_Y_AXIS_INDEX    10
-#define DS_JOYSTICK_TRIGGER_X_AXIS_INDEX  12
-#define DS_JOYSTICK_TRIGGER_Y_AXIS_INDEX  14
-#define DS_JOYSTICK_CHECKSUM_INDEX        16
-#define DS_JOYSTICK_CHECKSUM_TERMINATOR   18
+#define DS_JOYSTICK_LEFT_X_AXIS_INDEX     6
+#define DS_JOYSTICK_LEFT_Y_AXIS_INDEX     8
+#define DS_JOYSTICK_RIGHT_X_AXIS_INDEX    10
+#define DS_JOYSTICK_RIGHT_Y_AXIS_INDEX    12
+#define DS_JOYSTICK_TRIGGER_X_AXIS_INDEX  14
+#define DS_JOYSTICK_TRIGGER_Y_AXIS_INDEX  16
+#define DS_JOYSTICK_CHECKSUM_INDEX        18
+#define DS_JOYSTICK_CHECKSUM_TERMINATOR   20
 
 // Whole 
 #define MSDG
@@ -74,13 +74,12 @@ public:
       enabled   = (controlWord & (1<< 4)) > 0;  // Bit 5
       estopped  = (controlWord & (1<< 5)) > 0;  // Bit 6
 
-      printf("control word: %02x\n", controlWord);
-      printf("switch state: %02x\n", switchState);
+      // printf("control word: %02x\n", controlWord);
+      // printf("switch state: %02x\n", switchState);
 
-      printf("mode:     %d\n", mode);
-      printf("enabled:  %d\n", enabled);
-      printf("estopped: %d\n", estopped);
-
+      // printf("mode:     %d\n", mode);
+      // printf("enabled:  %d\n", enabled);
+      // printf("estopped: %d\n", estopped);
 
       return DS_CONTROL_LENGTH;
     }
@@ -93,10 +92,13 @@ public:
 
     if (length < DS_JOYSTICK_LENGTH) return 0;
     if (buffer[0] == PACKET_START_CHAR  && buffer[1] == MSGID_DS_JOYSTICK_1) {
-      if(!verifyChecksum(buffer, DS_JOYSTICK_CHECKSUM_INDEX)) return 0;
+      if(!verifyChecksum(buffer, DS_JOYSTICK_CHECKSUM_INDEX)) {
+        printf("Failed checksum\n");
+        return 0;
+      }
 
       // Data
-      buttonWord = decodeUint8(&buffer[DS_JOYSTICK_BUTTON_WORD_INDEX]);
+      buttonWord = decodeUint16(&buffer[DS_JOYSTICK_BUTTON_WORD_INDEX]);
       axis[0] = decodeUint8(&buffer[DS_JOYSTICK_LEFT_X_AXIS_INDEX]);
       axis[1] = decodeUint8(&buffer[DS_JOYSTICK_LEFT_Y_AXIS_INDEX]);
       axis[2] = decodeUint8(&buffer[DS_JOYSTICK_RIGHT_X_AXIS_INDEX]);
@@ -117,7 +119,7 @@ public:
       if(!verifyChecksum(buffer, DS_JOYSTICK_CHECKSUM_INDEX)) return 0;
 
       // Data
-      buttonWord = decodeUint8(&buffer[DS_JOYSTICK_BUTTON_WORD_INDEX]);
+      buttonWord = decodeUint16(&buffer[DS_JOYSTICK_BUTTON_WORD_INDEX]);
       axis[0] = decodeUint8(&buffer[DS_JOYSTICK_LEFT_X_AXIS_INDEX]);
       axis[1] = decodeUint8(&buffer[DS_JOYSTICK_LEFT_Y_AXIS_INDEX]);
       axis[2] = decodeUint8(&buffer[DS_JOYSTICK_RIGHT_X_AXIS_INDEX]);
@@ -144,8 +146,8 @@ public:
     controlWord |= (enabled << 2);   // Bit 2
     controlWord |= (estopped << 3);  // Bit 3
     
-    encodeProtocolUint8(controlWord,      &protocol_buffer[ROBOT_STATUS_SATATUS_WORD_INDEX]);
-    encodeProtocolUint8(protocol_version, &protocol_buffer[ROBOT_STATUS_PROTOCOL_VERSION_INDEX]);
+    encodeUint8(controlWord,      &protocol_buffer[ROBOT_STATUS_SATATUS_WORD_INDEX]);
+    encodeUint8(protocol_version, &protocol_buffer[ROBOT_STATUS_PROTOCOL_VERSION_INDEX]);
 
     // Footer
     encodeTermination(protocol_buffer, ROBOT_STATUS_LENGTH, ROBOT_STATUS_LENGTH - 4);
@@ -177,6 +179,9 @@ protected:
       {
         checksum += buffer[i];
       }
+
+      printf("content length %d\n", content_length);
+      printf("expected checksum %x\n", checksum);
   
       // Decode Checksum
       unsigned char decoded_checksum = decodeUint8( &buffer[content_length] );
@@ -189,11 +194,11 @@ protected:
   // Primative encode/decode functions
   //
   
-  static void encodeProtocolUint16( uint16_t value, char* buff ) {
+  static void encodeUint16( uint16_t value, char* buff ) {
     sprintf(&buff[0],"%04X", value );
   }
 
-  static uint16_t decodeProtocolUint16( char *uint16_string ) {
+  static uint16_t decodeUint16( char *uint16_string ) {
     uint16_t decoded_uint16 = 0;
     unsigned int shift_left = 12;
     for ( int i = 0; i < 4; i++ ) 
@@ -205,7 +210,7 @@ protected:
     return decoded_uint16;  
   }  
 
-  static void encodeProtocolUint8( uint8_t value, char* buff ) {
+  static void encodeUint8( uint8_t value, char* buff ) {
     sprintf(&buff[0],"%02X", value );
   }
   
