@@ -12,14 +12,14 @@
 // DS -> Robot Packets
 //
 
-// DS Control Packet - !c[1:control word][1:switch word][2:checksum][1:cr][1:lf]
+// DS Control Packet - !c[control word][switch word][checksum][cr][lf]
 #define MSGID_DS_CONTROL 'c'
 #define DS_CONTROL_LENGTH               8
                                           // !c
-#define DS_CONTROL_CONTROL_WORD_INDEX   2 // [1:control word]
-#define DS_CONTROL_SWITCH_WORD_INDEX    4 // [1:switch word]
-#define DS_CONTROL_CHECKSUM_INDEX       6 // [2:checksum]
-#define DS_CONTROL_CHECKSUM_TERMINATOR  8 // [1:cr][1:lf]
+#define DS_CONTROL_CONTROL_WORD_INDEX   2 // [control word]
+#define DS_CONTROL_SWITCH_WORD_INDEX    4 // [switch word]
+#define DS_CONTROL_CHECKSUM_INDEX       6 // [checksum]
+#define DS_CONTROL_CHECKSUM_TERMINATOR  8 // [cr][lf]
 
 
 // Joystick 1 Packet - !j[button word][leftXAxis][leftYAxis][rightXAxis][rightYAxis][triggerLeftAxis][triggerRightAxis][checksum][cr][lf]
@@ -37,6 +37,8 @@
 #define DS_JOYSTICK_CHECKSUM_INDEX        16
 #define DS_JOYSTICK_CHECKSUM_TERMINATOR   18
 
+// Whole 
+#define MSDG
 
 //
 // Robot -> DS Packets
@@ -56,9 +58,71 @@ class DSProtocol
 {
 
 public:
-  static int decodeDSControlPacket(char *buffer, int length, bool& estoped, bool& enabled, uint8_t& mode) {
+  static int decodeDSControlPacket(char *buffer, int length, bool& estopped, bool& enabled, uint8_t& mode, uint8_t& switchState) {
+    // https://github.com/kauailabs/navxmxp/blob/master/stm32/navx-mxp/AHRSProtocol.h#L366-L379
+    // DO NOT MODIFY The passed in args, unless this is a real packet
+
+    if (length < DS_CONTROL_LENGTH) return 0;
+    if (buffer[0] == PACKET_START_CHAR  && buffer[1] == MSGID_DS_CONTROL) {
+      if(!verifyChecksum(buffer, DS_CONTROL_CHECKSUM_INDEX)) return 0;
+
+      // Data
+      uint8_t controlWord = decodeUint8(&buffer[DS_CONTROL_CONTROL_WORD_INDEX]);
+      switchState = decodeUint8(&buffer[DS_CONTROL_CONTROL_WORD_INDEX]);
+
+      mode      = controlWord & 0x0f;    // Bits 0->4
+      enabled   = controlWord & (1<< 5); // Bit 5
+      estopped  = controlWord & (1<< 6); // Bit 6
+
+      return DS_CONTROL_LENGTH;
+    }
+
      return 0;
   }
+
+  static int decodeJoystick1Packet(char *buffer, int length, uint16_t& buttonWord, int8_t axis[]) {
+    // Joystick 1 Packet - !j[button word][leftXAxis][leftYAxis][rightXAxis][rightYAxis][triggerLeftAxis][triggerRightAxis][checksum][cr][lf]
+
+    if (length < DS_JOYSTICK_LENGTH) return 0;
+    if (buffer[0] == PACKET_START_CHAR  && buffer[1] == MSGID_DS_JOYSTICK_1) {
+      if(!verifyChecksum(buffer, DS_JOYSTICK_CHECKSUM_INDEX)) return 0;
+
+      // Data
+      buttonWord = decodeUint8(&buffer[DS_JOYSTICK_BUTTON_WORD_INDEX]);
+      axis[0] = decodeUint8(&buffer[DS_JOYSTICK_LEFT_X_AXIS_INDEX]);
+      axis[1] = decodeUint8(&buffer[DS_JOYSTICK_LEFT_Y_AXIS_INDEX]);
+      axis[2] = decodeUint8(&buffer[DS_JOYSTICK_RIGHT_X_AXIS_INDEX]);
+      axis[3] = decodeUint8(&buffer[DS_JOYSTICK_RIGHT_Y_AXIS_INDEX]);
+      axis[4] = decodeUint8(&buffer[DS_JOYSTICK_TRIGGER_X_AXIS_INDEX]);
+      axis[5] = decodeUint8(&buffer[DS_JOYSTICK_TRIGGER_Y_AXIS_INDEX]);
+
+      return DS_JOYSTICK_LENGTH;
+    }
+
+     return 0;
+  }
+
+  static int decodeJoystick2Packet(char *buffer, int length, uint16_t& buttonWord, int8_t axis[]) {
+    // Joystick 2 Packet - !J[button word][leftXAxis][leftYAxis][rightXAxis][rightYAxis][triggerLeftAxis][triggerRightAxis][checksum][cr][lf]
+    if (length < DS_JOYSTICK_LENGTH) return 0;
+    if (buffer[0] == PACKET_START_CHAR  && buffer[1] == MSGID_DS_JOYSTICK_2) {
+      if(!verifyChecksum(buffer, DS_JOYSTICK_CHECKSUM_INDEX)) return 0;
+
+      // Data
+      buttonWord = decodeUint8(&buffer[DS_JOYSTICK_BUTTON_WORD_INDEX]);
+      axis[0] = decodeUint8(&buffer[DS_JOYSTICK_LEFT_X_AXIS_INDEX]);
+      axis[1] = decodeUint8(&buffer[DS_JOYSTICK_LEFT_Y_AXIS_INDEX]);
+      axis[2] = decodeUint8(&buffer[DS_JOYSTICK_RIGHT_X_AXIS_INDEX]);
+      axis[3] = decodeUint8(&buffer[DS_JOYSTICK_RIGHT_Y_AXIS_INDEX]);
+      axis[4] = decodeUint8(&buffer[DS_JOYSTICK_TRIGGER_X_AXIS_INDEX]);
+      axis[5] = decodeUint8(&buffer[DS_JOYSTICK_TRIGGER_Y_AXIS_INDEX]);
+
+      return DS_JOYSTICK_LENGTH;
+    }
+
+     return 0;
+  }
+
 
 
   static int encodeRobotStatus(char *protocol_buffer, bool estopped, bool enabled, uint8_t mode, uint8_t protocol_version) {
