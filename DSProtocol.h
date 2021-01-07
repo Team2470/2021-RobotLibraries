@@ -14,7 +14,7 @@
 
 // DS Control Packet - !c[control word][switch word][checksum][cr][lf]
 #define MSGID_DS_CONTROL 'c'
-#define DS_CONTROL_LENGTH               8
+#define DS_CONTROL_LENGTH               10
                                           // !c
 #define DS_CONTROL_CONTROL_WORD_INDEX   2 // [control word]
 #define DS_CONTROL_SWITCH_WORD_INDEX    4 // [switch word]
@@ -68,11 +68,19 @@ public:
 
       // Data
       uint8_t controlWord = decodeUint8(&buffer[DS_CONTROL_CONTROL_WORD_INDEX]);
-      switchState = decodeUint8(&buffer[DS_CONTROL_CONTROL_WORD_INDEX]);
+      switchState = decodeUint8(&buffer[DS_CONTROL_SWITCH_WORD_INDEX]);
 
-      mode      = controlWord & 0x0f;    // Bits 0->4
-      enabled   = controlWord & (1<< 5); // Bit 5
-      estopped  = controlWord & (1<< 6); // Bit 6
+      mode      = controlWord & 0x0f;         // Bits 0->4
+      enabled   = (controlWord & (1<< 4)) > 0;  // Bit 5
+      estopped  = (controlWord & (1<< 5)) > 0;  // Bit 6
+
+      printf("control word: %02x\n", controlWord);
+      printf("switch state: %02x\n", switchState);
+
+      printf("mode:     %d\n", mode);
+      printf("enabled:  %d\n", enabled);
+      printf("estopped: %d\n", estopped);
+
 
       return DS_CONTROL_LENGTH;
     }
