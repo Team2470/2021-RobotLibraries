@@ -142,3 +142,60 @@ TEST(DSProtocol, decodeJoystick2Packet_axis_5) {
         EXPECT_EQ(axis[i], expectedAxis[i]);
     }
 }
+
+TEST(DSProtocol, decodeJoystick2Packet_bufferTooSmall) {
+    char buffer[] = "!J000000000000006B\r\n";
+    int length = 20;
+
+    uint16_t buttonWord = 128;
+    int8_t axis[6] = {1, 2, 3, 4, 5, 6};
+
+    int pl = DSProtocol::decodeJoystick1Packet(buffer, length, buttonWord, axis);   
+    EXPECT_EQ(pl, 0);
+
+    uint16_t expectedButtonWord = 128;
+    int8_t expectedAxis[6] = {1, 2, 3, 4, 5, 6};
+
+    EXPECT_EQ(buttonWord, expectedButtonWord);
+    for(int i = 0; i < 6; i++) {
+        EXPECT_EQ(axis[i], expectedAxis[i]);
+    }
+}
+
+TEST(DSProtocol, decodeJoystick2Packet_invalidStartChar) {
+    char buffer[] = "#J000000000000006B\r\n";
+    int length = 22;
+
+    uint16_t buttonWord = 128;
+    int8_t axis[6] = {1, 2, 3, 4, 5, 6};
+
+    int pl = DSProtocol::decodeJoystick1Packet(buffer, length, buttonWord, axis);   
+    EXPECT_EQ(pl, 0);
+
+    uint16_t expectedButtonWord = 128;
+    int8_t expectedAxis[6] = {1, 2, 3, 4, 5, 6};
+
+    EXPECT_EQ(buttonWord, expectedButtonWord);
+    for(int i = 0; i < 6; i++) {
+        EXPECT_EQ(axis[i], expectedAxis[i]);
+    }
+}
+
+TEST(DSProtocol, decodeJoystick2Packet_invalidMSGId) {
+    char buffer[] = "!J000000000000006B\r\n";
+    int length = 22;
+
+    uint16_t buttonWord = 128;
+    int8_t axis[6] = {1, 2, 3, 4, 5, 6};
+
+    int pl = DSProtocol::decodeJoystick1Packet(buffer, length, buttonWord, axis);   
+    EXPECT_EQ(pl, 0);
+
+    uint16_t expectedButtonWord = 128;
+    int8_t expectedAxis[6] = {1, 2, 3, 4, 5, 6};
+
+    EXPECT_EQ(buttonWord, expectedButtonWord);
+    for(int i = 0; i < 6; i++) {
+        EXPECT_EQ(axis[i], expectedAxis[i]);
+    }
+}

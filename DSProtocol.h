@@ -180,8 +180,8 @@ protected:
         checksum += buffer[i];
       }
 
-      printf("content length %d\n", content_length);
-      printf("expected checksum %x\n", checksum);
+      // printf("content length %d\n", content_length);
+      // printf("expected checksum %x\n", checksum);
   
       // Decode Checksum
       unsigned char decoded_checksum = decodeUint8( &buffer[content_length] );
