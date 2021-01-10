@@ -9,13 +9,21 @@ DriverStation ds;
 
 void setup() {
   // initialize serial communication
-  Serial.begin(57600);
+  Serial.begin(9600);
   while (!Serial); // wait for Leonardo enumeration, others continue immediately
+  Serial.println("Ready");
 }
+
+int foo = 0;
 
 void loop() {
   // put your main code here, to run repeatedly:
 
+  foo++;
+  if (foo % 10000 == 0) {
+    Serial.println("Bar");
+  }
+  
   // If any serial bytes are received, scan to see if a start
   // of message has been received.  Remove any bytes that precede
   // the start of a message.
@@ -34,8 +42,9 @@ void loop() {
     }
   }
 
+  //
   // Determine which packet was received
-  
+  //
 
   // If sufficient bytes have been received, process the data and
   // if a valid message is received, handle it.
@@ -50,8 +59,7 @@ void loop() {
 
     int i = 0;
     // Scan the buffer looking for valid packets
-    while ( i < bytes_read )
-    {
+    while (i < bytes_read) {
       int bytes_remaining = bytes_read - i;
       char stream_type;
       int packet_length = 0;
@@ -66,12 +74,14 @@ void loop() {
         Serial.println("Received Joystick 2 Packet");        
       }
       
-      if ( packet_length > 0 ) {
+      if (packet_length > 0) {
           i += packet_length;
       } else {
           i++;
       }
     }
-
   }
+
+  // User code
+
 }
