@@ -1,30 +1,99 @@
 #include "DSProtocol.h"
 #include "DSState.h"
 
-#define MIN_UART_MESSAGE_LENGTH DS_CONTROL_LENGTH
+//
+// Driver station
+//
+DriverStation ds;
+void driverstation_process();
+
+//
+// Hardware
+//
+#define ENA 5   // Left Motor Speed
+#define ENB 6   // Right Motor Speed
+#define IN1 7   // Left Motor - Forward
+#define IN2 8   // Left Motor - Reverse
+#define IN3 9   // Right Motor - Forward
+#define IN4 11  // Right Motor - Reverse
+
+void setup() {
+  //
+  // Driver station initialization
+  //
+  Serial.begin(57600);
+  while (!Serial); // wait for Leonardo enumeration, others continue immediately
+  Serial.println("Ready");
+
+  //
+  // Hardware initailization
+  //
+  pinMode(IN1,OUTPUT);
+  pinMode(IN2,OUTPUT);
+  pinMode(IN3,OUTPUT);
+  pinMode(IN4,OUTPUT);
+  pinMode(ENA,OUTPUT);
+  pinMode(ENB,OUTPUT);
+}
+
+void loop() {
+  driverstation_process();
+
+  // User code
+  int left  = -ds.gamepad1.axis[1]; // Invert as the Y axis is inverted
+  int right = -ds.gamepad1.axis[3]; // Invert as the Y axis is inverted
+
+  // TODO Figure out arcade drive later.....
+
+  // Set the direection for the left motor
+  // TODO add a dead band
+  uint8_t leftOutput = 0;
+  if (left > 0) {
+    // Forward
+    digitalWrite(IN1,HIGH);
+    digitalWrite(IN2,LOW);  
+    leftOutput = map(left, 0, 128, 0, 255);
+  } else {
+    digitalWrite(IN1,LOW);
+    digitalWrite(IN2,HIGH);      
+    leftOutput = map(left, -127, 0, 255, 0);
+  }
+  Serial.print("Left Out: ");
+  Serial.println(leftOutput);
+  analogWrite(ENA, leftOutput);
+
+  // Set the direection for the right motor
+  // TODO add a dead band
+  uint8_t rightOutput = 0;
+  if (right > 0) {
+    // Forward
+    digitalWrite(IN3,LOW);  
+    digitalWrite(IN4,HIGH);
+    rightOutput = map(right, 0, 128, 0, 255);
+  } else {
+    digitalWrite(IN3,HIGH);  
+    digitalWrite(IN4,LOW);    
+    rightOutput = map(right, -127, 0, 255, 0);
+  }
+  Serial.print("Right Out: ");
+  Serial.println(rightOutput);
+  analogWrite(ENB, rightOutput);  
+}
+
+//
+// Motor Helper functions
+//
+
+
+//
+// Below is the logic that communicates with the driver station
+// TODO It should move it is own file, but I want to keep DSProtcol/DSState platform neutral so the unit tests can run
+//
 
 char protocol_buffer[64];
 
-DriverStation ds;
-
-void setup() {
-  // initialize serial communication
-  Serial.begin(9600);
-  while (!Serial); // wait for Leonardo enumeration, others continue immediately
-  Serial.println("Ready");
-}
-
-int foo = 0;
-
-void loop() {
-  // put your main code here, to run repeatedly:
-
-  foo++;
-  if (foo % 10000 == 0) {
-    Serial.println("Bar");
-  }
-  
-  // If any serial bytes are received, scan to see if a start
+void driverstation_process() {
+ // If any serial bytes are received, scan to see if a start
   // of message has been received.  Remove any bytes that precede
   // the start of a message.
   bool found_start_of_message = false;
@@ -81,7 +150,4 @@ void loop() {
       }
     }
   }
-
-  // User code
-
 }

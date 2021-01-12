@@ -54,6 +54,8 @@
 
 // Log Message Packet - Any line that does not start with !S
 
+#define MIN_UART_MESSAGE_LENGTH DS_CONTROL_LENGTH
+
 class DSProtocol
 {
 
