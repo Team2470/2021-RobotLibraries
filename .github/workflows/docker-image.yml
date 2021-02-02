@@ -15,4 +15,4 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: Build the Docker image to run unit tests
-      run: docker build . --file Dockerfile --no-cache --tag team2470/2021-robotLibraries:$(date +%s)
+      run: docker build . --file Dockerfile --no-cache --tag team2470/2021-robotlibraries:$(date +%s)
