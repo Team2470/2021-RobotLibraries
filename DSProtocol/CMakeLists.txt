@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.10)
 project(DSProtocol)
 
 # Library Setup
-add_subdirectory(vendor/github.com/google/googletest)
+add_subdirectory(../vendor/github.com/google/googletest ./vendor/googletest)
 
 
 # Unit Test Setup

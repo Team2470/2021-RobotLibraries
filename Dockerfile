@@ -7,15 +7,13 @@ RUN set -x \
         cmake
 
 WORKDIR /work
-COPY test ./test
 COPY vendor ./vendor
-COPY DSProtocol.h .
-COPY DSState.h .
-COPY CMakeLists.txt .
+COPY DSProtocol ./DSProtocol
 
+# Run DSProtocol Tests
 RUN set -x \
-    && mkdir build \
-    && cd build \
+    && mkdir -p DSProtocol/build \
+    && cd DSProtocol/build \
     && cmake .. \
     && make \
     && ctest -V
