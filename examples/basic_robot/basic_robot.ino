@@ -14,10 +14,10 @@ Drivetrain drive;
  *************************************************************/
 #define DO_LM_PWM  5   // Left Motor Speed
 #define DO_RM_PWM  6   // Right Motor Speed
-#define DO_LM_FWD  7   // Left Motor - Forward
-#define DO_LM_REV  8   // Left Motor - Reverse
-#define DO_RM_FWD  9   // Right Motor - Forward
-#define DO_RM_REV 11  // Right Motor - Reverse
+#define DO_LM_REV  7   // Left Motor - Reverse
+#define DO_LM_FWD  8   // Left Motor - Forward
+#define DO_RM_REV  9   // Right Motor - Reverse
+#define DO_RM_FWD 11   // Right Motor - Forward
 
 
 /*************************************************************
@@ -63,11 +63,11 @@ void loop() {
   	// User code
     DriverStation dsStatus = comms.getStatus();
     
-  	double left  = -(dsStatus.gamepad1.axis[1]) / 128.0; // Invert as the Y axis is inverted
-  	double right = -(dsStatus.gamepad1.axis[3]) / 128.0; // Invert as the Y axis is inverted
-    
+  	float forward  = dsStatus.gamepad1.getAxisFloat(GamepadAxis::LeftY);
+  	float turn = dsStatus.gamepad1.getAxisFloat(GamepadAxis::RightX); 
+
   	// Pass axes to arcade drive
-    drive.arcade(left, right, true);
+    drive.arcade(forward, turn, true);
   
   } 
   else 

@@ -53,7 +53,7 @@ public:
      * @param[in] squareInputs squares the inputs, 
      *                     effectively creating a larger deadzone
      */
-    void arcade(double forward, double turn, bool squareInputs);
+    void arcade(float forward, float turn, bool squareInputs);
 
     /**
      * Sets the power level / speed to use on the motors
@@ -63,7 +63,7 @@ public:
      * @param[in] left power for the left motor
      * @param[in] right power for the right motor
      */
-    void setPower(double left, double right);
+    void setPower(float left, float right);
 
 /*************************************************************
  ******************* Private Functions ***********************
@@ -95,7 +95,7 @@ private:
      * @param[in] side The motor to set
      * @param[in] power The power level
      */
-    void setPower(int side, double power);
+    void setPower(int side, float power);
 
 };
 

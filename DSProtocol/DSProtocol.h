@@ -110,7 +110,7 @@ private:
    * @param[in] data A 2 character hex string
    * @return The decoded value
    */
-   unsigned char decodeUint8( char *data );
+  uint8_t decodeUint8( char *data );
 
   /**
    * Decode 16 bit value from 4 characters (2 bytes)
@@ -118,7 +118,7 @@ private:
    * @param[in] data a 4 character hex string
    * @return The decoded value
    */
-   uint16_t decodeUint16( char *data ); 
+  uint16_t decodeUint16( char *data ); 
 
   /**
    * Encode 8 bit value into 8 bit ascii buffer

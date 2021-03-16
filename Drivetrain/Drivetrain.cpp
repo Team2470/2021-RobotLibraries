@@ -38,10 +38,10 @@ void Drivetrain::setup(int l_dir_fwd, int l_dir_rev, int l_speed,
 	pinMode(DO_l_dir_rev_, OUTPUT);
 	pinMode(DO_r_dir_fwd_, OUTPUT);
 	pinMode(DO_r_dir_rev_, OUTPUT);
-	setPower(0.0, 0.0);
+	setPower(0.0f, 0.0f);
 }
 
-void Drivetrain::arcade(double forward, double turn, bool squareInputs) {
+void Drivetrain::arcade(float forward, float turn, bool squareInputs) {
 
 	if (squareInputs) {
 		if (forward < 0) { 
@@ -60,10 +60,10 @@ void Drivetrain::arcade(double forward, double turn, bool squareInputs) {
 	}
 
 	// (Ignore this) Preserve max input so a hard bank will still cause a significant response
-	//double maxInput = max(forward, turn);
-	double maxInput = forward;
-	double left;
-	double right;
+	//float maxInput = max(forward, turn);
+	float maxInput = forward;
+	float left;
+	float right;
 
 	if (forward >= 0) {
 		if (turn >= 0) {
@@ -90,13 +90,13 @@ void Drivetrain::arcade(double forward, double turn, bool squareInputs) {
 		}
 	}
 
-	left = clamp(left, -1.0, 1.0);
-	right = clamp(right, -1.0, 1.0);
+	left = clamp(left, -1.0f, 1.0f);
+	right = clamp(right, -1.0f, 1.0f);
 
 	setPower(left, right);
 }
 
-void Drivetrain::setPower(double left, double right) {
+void Drivetrain::setPower(float left, float right) {
   setPower(LEFT, left);
   setPower(RIGHT, right);
 }
@@ -106,7 +106,7 @@ void Drivetrain::setPower(double left, double right) {
  ******************* Private Functions ***********************
  *************************************************************/
   
-void Drivetrain::setPower(int side, double power) {
+void Drivetrain::setPower(int side, float power) {
   if (power > 0) {
     setDirection(side, FORWARD);
   }
@@ -128,8 +128,6 @@ void Drivetrain::setPower(int side, double power) {
 void Drivetrain::setDirection(int side, int direction) {
   if (side == LEFT) {
     if (direction == FORWARD) {
-    	Serial.println("FORWARD!");
-    	Serial.println(DO_l_dir_fwd_);
       digitalWrite(DO_l_dir_fwd_, HIGH);
       digitalWrite(DO_l_dir_rev_, LOW);
     }

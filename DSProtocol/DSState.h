@@ -25,10 +25,10 @@ enum GamepadButton {
 enum GamepadAxis {
     LeftX = 0,
     LeftY = 1,
-    RightX = 2,
-    RightY = 3,
-    TriggerX = 4,
-    TriggerY = 5
+    TriggerL = 2,
+    RightX = 3,
+    RightY = 4,
+    TriggerR = 5
 };
 
 class Gamepad {
@@ -42,6 +42,10 @@ public:
 
     bool getAxis(GamepadAxis axisID) {
       return axis[axisID];
+    }
+
+    float getAxisFloat(GamepadAxis axisID) {
+        return ((float)axis[axisID] / 128.0f);
     }
 };
 

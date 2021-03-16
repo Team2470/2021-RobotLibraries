@@ -85,7 +85,7 @@ bool DSProtocol::process() {
 		} else {
 			delay(2);
 			found_start_of_message = true;
-			Serial.println("found_start_message");
+			// Serial.println("found_start_message");
 			break;
 		}
 	}
@@ -115,15 +115,15 @@ bool DSProtocol::process() {
 
 			if (packet_length = decodeDSControlPacket(ds.estopped, ds.enabled, ds.mode, ds.switchState)) {
 				// Received control packet
-				Serial.println("Received DS Control Packet");
+				//Serial.println("Received DS Control Packet");
 				new_packets = true;
 			} else if (packet_length = decodeJoystickPacket(MSGID_DS_JOYSTICK_1, ds.gamepad1.buttonState, ds.gamepad1.axis)) {
 				// Recieved joystick 1 packet
-				Serial.println("Received Joystick 1 Packet");
+				//Serial.println("Received Joystick 1 Packet");
 				new_packets = true;
 			} else if (packet_length = decodeJoystickPacket(MSGID_DS_JOYSTICK_2, ds.gamepad2.buttonState, ds.gamepad2.axis)) {
 				// Recieved joystick 2 packet
-				Serial.println("Received Joystick 2 Packet");
+				//Serial.println("Received Joystick 2 Packet");
 				new_packets = true;        
 			} 
 
