@@ -13,26 +13,18 @@ class DSProtocol
 private:
 
   /* Holds the the bytes we have received, but not processed*/
-  char buffer[64];
+  char buffer_[64];
 
   /* The number of valid bytes in the buffer (should be less than the length) */
-  uint8_t buffer_len = 0;
+  uint8_t buffer_len_ = 0;
 
   /* Holds the current driver station status */
   DriverStation ds;
-
 
 /*************************************************************
  ******************* Public Functions ***********************
  *************************************************************/
 public:
-
-  /**
-   * Sets the baud rate for the serial connection
-   *
-   * @param[in] The baud rate (bps)
-   */
-  void begin( int baud_rate);
 
  /**
   * Processes the input from the serial port and indicates

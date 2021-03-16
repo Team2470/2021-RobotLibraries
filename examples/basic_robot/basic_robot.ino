@@ -1,12 +1,13 @@
 #include <DSProtocol.h>
 #include <DSState.h>
+#include <Drivetrain.h>
 
 
 /*************************************************************
  ****************** Modules / Libraries **********************
  *************************************************************/
 DSProtocol comms;
-
+Drivetrain drive;
 
 /*************************************************************
  ********************* Hardware Setup ************************
@@ -35,18 +36,16 @@ void setup() {
   //
 
   // This should match the serial or Bluetooth rate
-  comms.begin(57600);
-  
+  Serial.begin(57600);
+  while (!Serial); // wait for Leonardo enumeration, others continue immediately
+  Serial.println("Ready");
 
   //
   // Hardware initailization
   //
-  pinMode(DO_LM_FWD, OUTPUT);
-  pinMode(DO_LM_REV, OUTPUT);
-  pinMode(DO_RM_FWD, OUTPUT);
-  pinMode(DO_RM_REV, OUTPUT);
-  pinMode(DO_LM_PWM, OUTPUT);
-  pinMode(DO_RM_PWM, OUTPUT);
+  drive.setup(DO_LM_FWD, DO_LM_REV, DO_LM_PWM,
+              DO_RM_FWD, DO_RM_REV, DO_RM_PWM);
+
 }
 
 /**
@@ -64,56 +63,17 @@ void loop() {
   	// User code
     DriverStation dsStatus = comms.getStatus();
     
-  	int left  = -(dsStatus.gamepad1.axis[1]); // Invert as the Y axis is inverted
-  	int right = -(dsStatus.gamepad1.axis[3]); // Invert as the Y axis is inverted
+  	double left  = -(dsStatus.gamepad1.axis[1]) / 128.0; // Invert as the Y axis is inverted
+  	double right = -(dsStatus.gamepad1.axis[3]) / 128.0; // Invert as the Y axis is inverted
     
+  	// Pass axes to arcade drive
+    drive.arcade(left, right, true);
   
-  	// TODO Figure out arcade drive later.....
-  
-  	// Set the direection for the left motor
-  	// TODO add a dead band
-  	uint8_t leftOutput = 0;
-  	if (left > 0) 
-  	{
-  		// Forward
-  		digitalWrite(DO_LM_FWD, HIGH);
-  		digitalWrite(DO_LM_REV, LOW);  
-  		leftOutput = map(left, 0, 128, 0, 255);
-  	} 
-  	else 
-  	{
-  		digitalWrite(DO_LM_FWD, LOW);
-  		digitalWrite(DO_LM_REV, HIGH);      
-  		leftOutput = map(left, -127, 0, 255, 0);
-  	}
-  	Serial.print("Left Out: ");
-  	Serial.println(leftOutput);
-  	analogWrite(DO_LM_PWM, leftOutput);
-  
-  	// Set the direection for the right motor
-  	// TODO add a dead band
-  	uint8_t rightOutput = 0;
-  	if (right > 0) 
-  	{
-  		// Forward
-  		digitalWrite(DO_RM_FWD, LOW);  
-  		digitalWrite(DO_RM_REV, HIGH);
-  		rightOutput = map(right, 0, 128, 0, 255);
-  	} 
-  	else 
-  	{
-  		digitalWrite(DO_RM_FWD, HIGH);  
-  		digitalWrite(DO_RM_REV, LOW);    
-  		rightOutput = map(right, -127, 0, 255, 0);
-  	}
-  	Serial.print("Right Out: ");
-  	Serial.println(rightOutput);
-  	analogWrite(DO_RM_PWM, rightOutput);  
-	
   } 
   else 
   {
-    Serial.println("No new data received, waiting...");
+    //Serial.println("No new data received, waiting...");
+    delay(50);
   }
 
   
