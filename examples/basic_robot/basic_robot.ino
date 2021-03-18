@@ -19,6 +19,8 @@ Drivetrain drive;
 #define DO_RM_REV  9   // Right Motor - Reverse
 #define DO_RM_FWD 11   // Right Motor - Forward
 
+#define DO_LED    13   // LED output on the Uno
+
 
 /*************************************************************
  *********************** Main Code ***************************
@@ -46,6 +48,7 @@ void setup() {
   drive.setup(DO_LM_FWD, DO_LM_REV, DO_LM_PWM,
               DO_RM_FWD, DO_RM_REV, DO_RM_PWM);
 
+  pinMode(DO_LED, OUTPUT);
 }
 
 /**
@@ -63,11 +66,20 @@ void loop() {
   	// User code
     DriverStation dsStatus = comms.getStatus();
     
-  	float forward  = dsStatus.gamepad1.getAxisFloat(GamepadAxis::LeftY);
-  	float turn = dsStatus.gamepad1.getAxisFloat(GamepadAxis::RightX); 
+    float forward  = dsStatus.gamepad1.getAxisFloat(GamepadAxis::LeftY);
+    float turn = dsStatus.gamepad1.getAxisFloat(GamepadAxis::RightX); 
+
+    bool led_on = dsStatus.gamepad1.getButton(GamepadButton::A);
 
   	// Pass axes to arcade drive
     drive.arcade(forward, turn, true);
+
+    // Flash the LED with the button press
+    if (led_on) {
+      digitalWrite(DO_LED, HIGH);
+    } else {
+      digitalWrite(DO_LED, LOW);
+    }
   
   } 
   else 
