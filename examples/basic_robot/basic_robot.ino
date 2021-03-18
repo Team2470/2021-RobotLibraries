@@ -9,6 +9,14 @@
 DSProtocol comms;
 Drivetrain drive;
 
+/* Used to get the last time we updated the status */
+long lastStatusTime = millis();
+long STATUS_UPDATE_MS = 2000;
+
+/* Tracks the last time we received a packet */
+long lastCommsTime = millis();
+long COMMS_LOST_MS = 1000;
+
 /*************************************************************
  ********************* Hardware Setup ************************
  *************************************************************/
@@ -62,31 +70,82 @@ void loop() {
   // Only react if we have received new packets, otherwise wait
   if (comms.process()) 
   {
-
-  	// User code
     DriverStation dsStatus = comms.getStatus();
-    
-    float forward  = dsStatus.gamepad1.getAxisFloat(GamepadAxis::LeftY);
-    float turn = dsStatus.gamepad1.getAxisFloat(GamepadAxis::RightX); 
 
-    bool led_on = dsStatus.gamepad1.getButton(GamepadButton::A);
-
-  	// Pass axes to arcade drive
-    drive.arcade(forward, turn, true);
-
-    // Flash the LED with the button press
-    if (led_on) {
-      digitalWrite(DO_LED, HIGH);
-    } else {
-      digitalWrite(DO_LED, LOW);
+    if (dsStatus.enabled) 
+    {
+      // For now, always run teleop mode, in the future use mode to switch
+      // between teleop_loop and autonomous_loop
+      teleop_loop(dsStatus);
     }
-  
-  } 
-  else 
-  {
-    //Serial.println("No new data received, waiting...");
-    delay(50);
-  }
+    else
+    {
+      disable();
+    }
 
-  
+    /* Print updates at a slow rate to prevent flooding the serial port */
+    long curStatusTime = millis();
+    if ((curStatusTime - lastStatusTime) > STATUS_UPDATE_MS)
+    {
+      status_loop(dsStatus);
+      lastStatusTime = curStatusTime;
+    }
+
+    lastCommsTime = millis();
+  } 
+
+  //Serial.println("No new data received, waiting...");
+  delay(20);
+
+  if ((millis() - lastCommsTime) > COMMS_LOST_MS) 
+  {
+    disable();
+  }
+}
+
+/**
+ * Update the printed status of the robot every 2 seconds
+ *
+ * Place any status update code here to prevent flooding the serial port.
+ */
+void status_loop(DriverStation& dsStatus) 
+{
+  if (!dsStatus.enabled) Serial.println("Robot disabled, waiting to enable...");
+  if (dsStatus.enabled && dsStatus.mode == 0) Serial.println("Robot enabled. Teleop Mode");
+}
+
+/**
+ * Teleop Loop
+ *
+ * Place all your teleop mode code here
+ */
+void teleop_loop(DriverStation& dsStatus) 
+{
+
+  float forward  = dsStatus.gamepad1.getAxisFloat(GamepadAxis::LeftY);
+  float turn = dsStatus.gamepad1.getAxisFloat(GamepadAxis::RightX); 
+
+  bool led_on = dsStatus.gamepad1.getButton(GamepadButton::A);
+
+  // Pass axes to arcade drive
+  drive.arcade(forward, turn, true);
+
+  // Flash the LED with the button press
+  if (led_on) {
+    digitalWrite(DO_LED, HIGH);
+  } else {
+    digitalWrite(DO_LED, LOW);
+  }
+}
+
+/**
+ * Disable Robot
+ * 
+ * Shutdown and stop any motors here.
+ * This will get called on disable, or if we lose communications
+ */
+void disable()
+{
+    digitalWrite(DO_LED, LOW);
+    drive.setPower(0.0f, 0.0f);
 }

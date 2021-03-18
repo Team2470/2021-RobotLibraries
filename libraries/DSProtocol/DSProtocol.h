@@ -12,12 +12,6 @@ class DSProtocol
  *************************************************************/
 private:
 
-  /* Holds the the bytes we have received, but not processed*/
-  char buffer_[64];
-
-  /* The number of valid bytes in the buffer (should be less than the length) */
-  uint8_t buffer_len_ = 0;
-
   /* Holds the current driver station status */
   DriverStation ds;
 
@@ -58,7 +52,7 @@ private:
    *
    * @return The length of the fully decoded packet
    */
-  int decodeDSControlPacket(bool& estopped, bool& enabled, uint8_t& mode, uint8_t& switchState);
+  int decodeDSControlPacket(uint8_t buffer[], uint8_t buffer_len, bool& estopped, bool& enabled, uint8_t& mode, uint8_t& switchState);
 
   /**
    * Decoder for the joystick packet
@@ -69,7 +63,7 @@ private:
    * @param[out] axis[]      Decoded axis information
    * @return The length of the fully decoded packet
    */
-  int decodeJoystickPacket(uint8_t joystick_id, uint16_t& buttonWord, int8_t axis[]);
+  int decodeJoystickPacket(uint8_t buffer[], uint8_t buffer_len, uint8_t joystick_id, uint16_t& buttonWord, int8_t axis[]);
 
   /**
    * Encode the current robot status to send to the driver station
@@ -80,7 +74,7 @@ private:
    * @param protocol_version The current version of the protocol
    * @return The length of the robot status packet
    */
-  int encodeRobotStatus(bool estopped, bool enabled, uint8_t mode, uint8_t protocol_version);
+  int encodeRobotStatus(uint8_t buffer[], uint8_t buffer_len, bool estopped, bool enabled, uint8_t mode, uint8_t protocol_version);
 
 
   /** 
@@ -89,14 +83,14 @@ private:
    * @param total_length   The overall length of the packet
    * @param content_length The length of the payload
    */
-  void encodeTermination( int total_length, int content_length );
+  void encodeTermination(uint8_t buffer[], uint8_t buffer_len, int total_length, int content_length );
   
   /** 
    * Verifies the protocol checksum returning true if it passes
    *
    * @param content_length The length of the payload
    */
-  bool verifyChecksum( int content_length );
+  bool verifyChecksum(uint8_t buffer[], uint8_t buffer_len, int content_length );
 
 
   /*************************************************************

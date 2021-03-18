@@ -20,12 +20,12 @@
 // DS -> Robot Packets
 //
 
-// DS Control Packet - !c[control word][switch word][checksum][cr][lf]
+// DS Control Packet - !c[control byte][switch byte][checksum][cr][lf]
 #define MSGID_DS_CONTROL 'c'
 #define DS_CONTROL_LENGTH               10
                                           // !c
-#define DS_CONTROL_CONTROL_WORD_INDEX   2 // [control word]
-#define DS_CONTROL_SWITCH_WORD_INDEX    4 // [switch word]
+#define DS_CONTROL_CONTROL_WORD_INDEX   2 // [control byte]
+#define DS_CONTROL_SWITCH_WORD_INDEX    4 // [switch byte]
 #define DS_CONTROL_CHECKSUM_INDEX       6 // [checksum]
 #define DS_CONTROL_CHECKSUM_TERMINATOR  8 // [cr][lf]
 
@@ -71,6 +71,16 @@
 
 bool DSProtocol::process() {
 
+
+	// TODO: Handle the case where our buffer isn't completely empty at the end of processing, indicating 
+	// TODO: a partial packet is stuck in the queue.
+	
+    /* Holds the the bytes we have received, but not processed*/
+    char buffer[64];
+
+    /* The number of valid bytes in the buffer (should be less than the length) */
+    uint8_t buffer_len = 0;
+
 	// If any serial bytes are received, scan to see if a start
 	// of message has been received.  Remove any bytes that precede
 	// the start of a message.
@@ -99,11 +109,10 @@ bool DSProtocol::process() {
 	if ( found_start_of_message && ( Serial.available() >= MIN_UART_MESSAGE_LENGTH ) ) {
 		int bytes_read = 0;
 		while ( Serial.available() ) {
-			if ( bytes_read >= sizeof(buffer_) ) {
+			if ( bytes_read >= sizeof(buffer) ) {
 				break;
 			}
-			buffer_[bytes_read++] = Serial.read();
-			buffer_len_ = bytes_read;
+			buffer[bytes_read++] = Serial.read();
 		}
 
 		int i = 0;
@@ -113,15 +122,15 @@ bool DSProtocol::process() {
 			char stream_type;
 			int packet_length = 0;
 
-			if (packet_length = decodeDSControlPacket(ds.estopped, ds.enabled, ds.mode, ds.switchState)) {
+			if (packet_length = decodeDSControlPacket(&buffer[i], bytes_remaining, ds.estopped, ds.enabled, ds.mode, ds.switchState)) {
 				// Received control packet
 				//Serial.println("Received DS Control Packet");
 				new_packets = true;
-			} else if (packet_length = decodeJoystickPacket(MSGID_DS_JOYSTICK_1, ds.gamepad1.buttonState, ds.gamepad1.axis)) {
+			} else if (packet_length = decodeJoystickPacket(&buffer[i], bytes_remaining, MSGID_DS_JOYSTICK_1, ds.gamepad1.buttonState, ds.gamepad1.axis)) {
 				// Recieved joystick 1 packet
 				//Serial.println("Received Joystick 1 Packet");
 				new_packets = true;
-			} else if (packet_length = decodeJoystickPacket(MSGID_DS_JOYSTICK_2, ds.gamepad2.buttonState, ds.gamepad2.axis)) {
+			} else if (packet_length = decodeJoystickPacket(&buffer[i], bytes_remaining, MSGID_DS_JOYSTICK_2, ds.gamepad2.buttonState, ds.gamepad2.axis)) {
 				// Recieved joystick 2 packet
 				//Serial.println("Received Joystick 2 Packet");
 				new_packets = true;        
@@ -147,18 +156,18 @@ DriverStation DSProtocol::getStatus() {
  ******************* Private Functions ***********************
  *************************************************************/
   
-int DSProtocol::decodeDSControlPacket(bool& estopped, bool& enabled, uint8_t& mode, uint8_t& switchState) {
+int DSProtocol::decodeDSControlPacket(uint8_t buffer[], uint8_t buffer_len, bool& estopped, bool& enabled, uint8_t& mode, uint8_t& switchState) {
 	// https://github.com/kauailabs/navxmxp/blob/master/stm32/navx-mxp/AHRSProtocol.h#L366-L379
 	// DO NOT MODIFY The passed in args, unless this is a real packet
 
-	if (buffer_len_ < DS_CONTROL_LENGTH) return 0;
+	if (buffer_len < DS_CONTROL_LENGTH) return 0;
 
-	if (buffer_[0] == PACKET_START_CHAR  && buffer_[1] == MSGID_DS_CONTROL) {
-		if(!verifyChecksum(DS_CONTROL_CHECKSUM_INDEX)) return 0;
+	if (buffer[0] == PACKET_START_CHAR  && buffer[1] == MSGID_DS_CONTROL) {
+		if(!verifyChecksum(buffer, buffer_len, DS_CONTROL_CHECKSUM_INDEX)) return 0;
 
 		// Data
-		uint8_t controlWord = decodeUint8(&buffer_[DS_CONTROL_CONTROL_WORD_INDEX]);
-		switchState = decodeUint8(&buffer_[DS_CONTROL_SWITCH_WORD_INDEX]);
+		uint8_t controlWord = decodeUint8(&buffer[DS_CONTROL_CONTROL_WORD_INDEX]);
+		switchState = decodeUint8(&buffer[DS_CONTROL_SWITCH_WORD_INDEX]);
 
 		mode      = controlWord & 0x0f;         // Bits 0->4
 		enabled   = (controlWord & (1<< 4)) > 0;  // Bit 5
@@ -177,24 +186,24 @@ int DSProtocol::decodeDSControlPacket(bool& estopped, bool& enabled, uint8_t& mo
 	return 0;
 }
 
-int DSProtocol::decodeJoystickPacket(uint8_t joystick_id, uint16_t& buttonWord, int8_t axis[]) {
-	if (buffer_len_ < DS_JOYSTICK_LENGTH) return 0;
+int DSProtocol::decodeJoystickPacket(uint8_t buffer[], uint8_t buffer_len, uint8_t joystick_id, uint16_t& buttonWord, int8_t axis[]) {
+	if (buffer_len < DS_JOYSTICK_LENGTH) return 0;
 
-	if (buffer_[0] == PACKET_START_CHAR  && buffer_[1] == joystick_id) {
+	if (buffer[0] == PACKET_START_CHAR  && buffer[1] == joystick_id) {
 
-	  if(!verifyChecksum(DS_JOYSTICK_CHECKSUM_INDEX)) {
+	  if(!verifyChecksum(buffer, buffer_len, DS_JOYSTICK_CHECKSUM_INDEX)) {
 	    printf("Failed checksum\n");
 	    return 0;
 	  }
 
 	  // Data
-	  buttonWord = decodeUint16(&buffer_[DS_JOYSTICK_BUTTON_WORD_INDEX]);
-	  axis[0] = decodeUint8(&buffer_[DS_JOYSTICK_LEFT_X_AXIS_INDEX]);
-	  axis[1] = decodeUint8(&buffer_[DS_JOYSTICK_LEFT_Y_AXIS_INDEX]);
-	  axis[2] = decodeUint8(&buffer_[DS_JOYSTICK_RIGHT_X_AXIS_INDEX]);
-	  axis[3] = decodeUint8(&buffer_[DS_JOYSTICK_RIGHT_Y_AXIS_INDEX]);
-	  axis[4] = decodeUint8(&buffer_[DS_JOYSTICK_TRIGGER_X_AXIS_INDEX]);
-	  axis[5] = decodeUint8(&buffer_[DS_JOYSTICK_TRIGGER_Y_AXIS_INDEX]);
+	  buttonWord = decodeUint16(&buffer[DS_JOYSTICK_BUTTON_WORD_INDEX]);
+	  axis[0] = decodeUint8(&buffer[DS_JOYSTICK_LEFT_X_AXIS_INDEX]);
+	  axis[1] = decodeUint8(&buffer[DS_JOYSTICK_LEFT_Y_AXIS_INDEX]);
+	  axis[2] = decodeUint8(&buffer[DS_JOYSTICK_RIGHT_X_AXIS_INDEX]);
+	  axis[3] = decodeUint8(&buffer[DS_JOYSTICK_RIGHT_Y_AXIS_INDEX]);
+	  axis[4] = decodeUint8(&buffer[DS_JOYSTICK_TRIGGER_X_AXIS_INDEX]);
+	  axis[5] = decodeUint8(&buffer[DS_JOYSTICK_TRIGGER_Y_AXIS_INDEX]);
 
 	  return DS_JOYSTICK_LENGTH;
 	}
@@ -202,10 +211,10 @@ int DSProtocol::decodeJoystickPacket(uint8_t joystick_id, uint16_t& buttonWord, 
 	return 0;
 }
 
-int DSProtocol::encodeRobotStatus(bool estopped, bool enabled, uint8_t mode, uint8_t protocol_version) {
+int DSProtocol::encodeRobotStatus(uint8_t buffer[], uint8_t buffer_len, bool estopped, bool enabled, uint8_t mode, uint8_t protocol_version) {
 	// Header
-	buffer_[0] = PACKET_START_CHAR;
-	buffer_[1] = MSGID_ROBOT_STATUS;
+	buffer[0] = PACKET_START_CHAR;
+	buffer[1] = MSGID_ROBOT_STATUS;
 
 	// Data
 	uint8_t controlWord = 0;
@@ -213,42 +222,42 @@ int DSProtocol::encodeRobotStatus(bool estopped, bool enabled, uint8_t mode, uin
 	controlWord |= (enabled << 2);   // Bit 2
 	controlWord |= (estopped << 3);  // Bit 3
 
-	encodeUint8(controlWord,      &buffer_[ROBOT_STATUS_SATATUS_WORD_INDEX]);
-	encodeUint8(protocol_version, &buffer_[ROBOT_STATUS_PROTOCOL_VERSION_INDEX]);
+	encodeUint8(controlWord,      &buffer[ROBOT_STATUS_SATATUS_WORD_INDEX]);
+	encodeUint8(protocol_version, &buffer[ROBOT_STATUS_PROTOCOL_VERSION_INDEX]);
 
 	// Footer
-	encodeTermination(ROBOT_STATUS_LENGTH, ROBOT_STATUS_LENGTH - 4);
+	encodeTermination(buffer, buffer_len, ROBOT_STATUS_LENGTH, ROBOT_STATUS_LENGTH - 4);
 	return ROBOT_STATUS_LENGTH;
 }
 
-void DSProtocol::encodeTermination( int total_length, int content_length ) {
+void DSProtocol::encodeTermination(uint8_t buffer[], uint8_t buffer_len, int total_length, int content_length ) {
 	if ( ( total_length >= (CHECKSUM_LENGTH + TERMINATOR_LENGTH) ) && ( total_length >= content_length + (CHECKSUM_LENGTH + TERMINATOR_LENGTH) ) ) {
 		// Checksum 
 		unsigned char checksum = 0;
 		for ( int i = 0; i < content_length; i++ ) {
-			checksum += buffer_[i];
+			checksum += buffer[i];
 		}
 		// convert checksum to two ascii bytes
-		sprintf(&buffer_[content_length], "%02X", checksum);
+		sprintf(&buffer[content_length], "%02X", checksum);
 
 		// Message Terminator
-		sprintf(&buffer_[content_length + CHECKSUM_LENGTH], "%s","\r\n");
+		sprintf(&buffer[content_length + CHECKSUM_LENGTH], "%s","\r\n");
 	}
 }
 
-bool DSProtocol::verifyChecksum( int content_length ) {
+bool DSProtocol::verifyChecksum(uint8_t buffer[], uint8_t buffer_len, int content_length ) {
 	// Calculate Checksum
 	unsigned char checksum = 0;
 	for ( int i = 0; i < content_length; i++ )
 	{
-		checksum += buffer_[i];
+		checksum += buffer[i];
 	}
 
 	// printf("content length %d\n", content_length);
 	// printf("expected checksum %x\n", checksum);
 
 	// Decode Checksum
-	unsigned char decoded_checksum = decodeUint8( &buffer_[content_length] );
+	unsigned char decoded_checksum = decodeUint8( &buffer[content_length] );
 
 	return ( checksum == decoded_checksum );
 }
