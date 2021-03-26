@@ -15,6 +15,7 @@ LEDSubsystem::LEDSubsystem()
 
 void LEDSubsystem::setup() {
   pinMode(DO_LED, OUTPUT);
+  digitalWrite(DO_LED, LOW);
 }
 
 void LEDSubsystem::periodic() {

@@ -19,7 +19,10 @@ void CommandScheduler::setPeriod(unsigned int period_ms) {
 
 void CommandScheduler::schedule(bool interruptible, CommandBase& command) {
   // TODO: Handle interruptible
+  Serial.println("Add cmd");
   scheduled_commands_.Append(command);
+  command.initialize();
+
 }
 
 void CommandScheduler::schedule(CommandBase& command) {

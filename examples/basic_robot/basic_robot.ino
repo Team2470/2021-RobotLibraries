@@ -15,7 +15,8 @@ Drivetrain drive;
 
 LEDSubsystem led;
 
-BlinkLEDCmd  led_blink(led);
+BlinkLEDCmd  led_blink(led, 500, 5000);
+BlinkLEDCmd  fast_blink(led, 250, 2000);
 
 /* Used to get the last time we updated the status */
 long lastStatusTime = millis();
@@ -24,6 +25,9 @@ long STATUS_UPDATE_MS = 2000;
 /* Tracks the last time we received a packet */
 long lastCommsTime = millis();
 long COMMS_LOST_MS = 1000;
+
+/* Button pressed tracking */
+bool btn_prev_a_ = false;
 
 
 /*************************************************************
@@ -56,6 +60,8 @@ void setup() {
   CommandScheduler::getInstance().registerSubsystem(led);
   
   CommandScheduler::getInstance().schedule(led_blink);
+
+  Serial.println("Setup complete!");
 }
 
 /**
@@ -66,15 +72,14 @@ void setup() {
  */
 void loop() {
 
-  // Temporary testing, run scheduler inside loop
+  // TODO: Change to only run the scheduler when enabled?
   CommandScheduler::getInstance().run();
-
-
+  
   // Only react if we have received new packets, otherwise wait
   if (comms.process()) 
   {
     DriverStation dsStatus = comms.getStatus();
-
+      
     if (dsStatus.enabled) 
     {
       // For now, always run teleop mode, in the future use mode to switch
@@ -128,6 +133,13 @@ void teleop_loop(DriverStation& dsStatus)
   float forward  = dsStatus.gamepad1.getAxisFloat(GamepadAxis::LeftY);
   float turn = dsStatus.gamepad1.getAxisFloat(GamepadAxis::RightX); 
 
+  bool button = dsStatus.gamepad1.getButton(GamepadButton::A);
+
+  if (button && button != btn_prev_a_) {
+    CommandScheduler::getInstance().schedule(fast_blink);
+  }
+  btn_prev_a_ = button;
+
   // Pass axes to arcade drive
   drive.arcade(forward, turn, true);
 }
@@ -140,6 +152,5 @@ void teleop_loop(DriverStation& dsStatus)
  */
 void disable()
 {
-    //digitalWrite(DO_LED, LOW);
     drive.setPower(0.0f, 0.0f);
 }
