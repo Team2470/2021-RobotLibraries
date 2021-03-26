@@ -1,13 +1,21 @@
 #include <DSProtocol.h>
 #include <DSState.h>
 #include <Drivetrain.h>
+#include "Constants.h"
 
+#include "LEDSubsystem.h"
+#include "CommandScheduler.h"
+#include "BlinkLEDCmd.h"
 
 /*************************************************************
  ****************** Modules / Libraries **********************
  *************************************************************/
 DSProtocol comms;
 Drivetrain drive;
+
+LEDSubsystem led;
+
+BlinkLEDCmd  led_command(led);
 
 /* Used to get the last time we updated the status */
 long lastStatusTime = millis();
@@ -16,18 +24,6 @@ long STATUS_UPDATE_MS = 2000;
 /* Tracks the last time we received a packet */
 long lastCommsTime = millis();
 long COMMS_LOST_MS = 1000;
-
-/*************************************************************
- ********************* Hardware Setup ************************
- *************************************************************/
-#define DO_LM_PWM  5   // Left Motor Speed
-#define DO_RM_PWM  6   // Right Motor Speed
-#define DO_LM_REV  7   // Left Motor - Reverse
-#define DO_LM_FWD  8   // Left Motor - Forward
-#define DO_RM_REV  9   // Right Motor - Reverse
-#define DO_RM_FWD 11   // Right Motor - Forward
-
-#define DO_LED    13   // LED output on the Uno
 
 
 /*************************************************************
@@ -56,7 +52,10 @@ void setup() {
   drive.setup(DO_LM_FWD, DO_LM_REV, DO_LM_PWM,
               DO_RM_FWD, DO_RM_REV, DO_RM_PWM);
 
-  pinMode(DO_LED, OUTPUT);
+  led.setup();
+
+  CommandScheduler::getInstance().registerSubsystem(led);
+  CommandScheduler::getInstance().schedule(led_command);
 }
 
 /**
@@ -132,9 +131,9 @@ void teleop_loop(DriverStation& dsStatus)
 
   // Flash the LED with the button press
   if (led_on) {
-    digitalWrite(DO_LED, HIGH);
+    led.turnOn();
   } else {
-    digitalWrite(DO_LED, LOW);
+    led.turnOff();
   }
 }
 
