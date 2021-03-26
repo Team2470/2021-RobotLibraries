@@ -18,7 +18,8 @@ void CommandScheduler::setPeriod(unsigned int period_ms) {
 }
 
 void CommandScheduler::schedule(bool interruptible, CommandBase& command) {
-  // TODO: Implement adding to schedule
+  // TODO: Handle interruptible
+  scheduled_commands_.Append(command);
 }
 
 void CommandScheduler::schedule(CommandBase& command) {
@@ -26,11 +27,46 @@ void CommandScheduler::schedule(CommandBase& command) {
 }
 
 void CommandScheduler::run() {
-  // TODO: Implement run
+  
+  // Run any of the subsystem execute commands
+  if(subsystems_.moveToStart()) {
+    do {
+      subsystems_.getCurrent().periodic();
+    } while (subsystems_.next());
+  }
+
+  // Run any of the subsystem execute commands
+  if(scheduled_commands_.moveToStart()) {
+    do {
+
+      auto& command = scheduled_commands_.getCurrent();
+      
+      // Run execute.  We don't have other actions to check
+      command.execute();
+
+      if (command.isFinished()) {
+        command.end(false);
+        
+        // TODO: Remove from list of active requirements (also, track requirements)
+
+        // Delete the current item, then continue to skip calling next
+        scheduled_commands_.DeleteCurrent();
+        
+        // We modified the list, so use continue to read the next or break out
+        if (scheduled_commands_.getLength() == 0) {
+          break;
+        } else {
+          continue;
+        }
+      }
+
+    } while (scheduled_commands_.next());
+  }
+  
 }
 
 void CommandScheduler::registerSubsystem(SubsystemBase& subsystem) {
-  // TODO: Save to subsystem list
+  subsystems_.Append(subsystem);
 }
 
 void CommandScheduler::setDefaultCommand(SubsystemBase& subsystem, CommandBase& defaultCommand) {

@@ -17,10 +17,18 @@ void LEDSubsystem::setup() {
   pinMode(DO_LED, OUTPUT);
 }
 
+void LEDSubsystem::periodic() {
+  // Add any periodic tasks you would need here
+}
+
 void LEDSubsystem::turnOn() {
   digitalWrite(DO_LED, HIGH);
 }
 
 void LEDSubsystem::turnOff() {
   digitalWrite(DO_LED, LOW);
+}
+
+bool LEDSubsystem::isOn() {
+  return digitalRead(DO_LED);
 }

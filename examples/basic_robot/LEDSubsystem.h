@@ -10,6 +10,7 @@ class LEDSubsystem : public SubsystemBase {
 
     void setup() override;
 
+    void periodic() override;
 
     // Add Subsystem methods here
 
@@ -22,6 +23,11 @@ class LEDSubsystem : public SubsystemBase {
      * Turns off the LED
      */
     void turnOff();
+
+    /**
+     * Returns true if the led is on
+     */
+    bool isOn();
 
     private:
 

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "CommandBase.h"
+#include "LinkedList.hpp"
 
 /**
  * The scheduler responsible for running Commands.  A Command-based robot should
@@ -10,8 +11,13 @@
  * methods to be called and for their default commands to be scheduled.
  */
 class CommandScheduler final {
+
+  public:
+
+  LinkedList<SubsystemBase&> subsystems_;
+  LinkedList<CommandBase&> scheduled_commands_;
   
- public:
+  public:
   /**
    * Returns the Scheduler instance.
    *

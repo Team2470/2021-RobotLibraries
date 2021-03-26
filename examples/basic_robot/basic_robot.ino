@@ -15,7 +15,7 @@ Drivetrain drive;
 
 LEDSubsystem led;
 
-BlinkLEDCmd  led_command(led);
+BlinkLEDCmd  led_blink(led);
 
 /* Used to get the last time we updated the status */
 long lastStatusTime = millis();
@@ -51,11 +51,11 @@ void setup() {
   //
   drive.setup(DO_LM_FWD, DO_LM_REV, DO_LM_PWM,
               DO_RM_FWD, DO_RM_REV, DO_RM_PWM);
-
   led.setup();
 
   CommandScheduler::getInstance().registerSubsystem(led);
-  CommandScheduler::getInstance().schedule(led_command);
+  
+  CommandScheduler::getInstance().schedule(led_blink);
 }
 
 /**
@@ -65,6 +65,10 @@ void setup() {
  * Do not perform any blocking calls or your robot will hang up and not work.
  */
 void loop() {
+
+  // Temporary testing, run scheduler inside loop
+  CommandScheduler::getInstance().run();
+
 
   // Only react if we have received new packets, otherwise wait
   if (comms.process()) 
@@ -124,17 +128,8 @@ void teleop_loop(DriverStation& dsStatus)
   float forward  = dsStatus.gamepad1.getAxisFloat(GamepadAxis::LeftY);
   float turn = dsStatus.gamepad1.getAxisFloat(GamepadAxis::RightX); 
 
-  bool led_on = dsStatus.gamepad1.getButton(GamepadButton::A);
-
   // Pass axes to arcade drive
   drive.arcade(forward, turn, true);
-
-  // Flash the LED with the button press
-  if (led_on) {
-    led.turnOn();
-  } else {
-    led.turnOff();
-  }
 }
 
 /**
@@ -145,6 +140,6 @@ void teleop_loop(DriverStation& dsStatus)
  */
 void disable()
 {
-    digitalWrite(DO_LED, LOW);
+    //digitalWrite(DO_LED, LOW);
     drive.setPower(0.0f, 0.0f);
 }
