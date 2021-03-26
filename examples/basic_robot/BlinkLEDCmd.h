@@ -7,6 +7,7 @@ class BlinkLEDCmd : public CommandBase {
 
   public:
 
+    unsigned long start_cmd_ = 0;
     unsigned long last_blink_ = 0;
 
   public:
@@ -18,6 +19,8 @@ class BlinkLEDCmd : public CommandBase {
     void execute() override;
 
     bool isFinished() override;
+
+    void end(bool interrupted);
 
   private:
     LEDSubsystem& led_;

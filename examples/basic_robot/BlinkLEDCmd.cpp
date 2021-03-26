@@ -14,6 +14,7 @@ BlinkLEDCmd::BlinkLEDCmd(LEDSubsystem& led) : led_(led) {
 void BlinkLEDCmd::initialize() {
   led_.turnOn();
   last_blink_ = millis();
+  start_cmd_ = millis();
 }
 
 void BlinkLEDCmd::execute() {
@@ -28,5 +29,11 @@ void BlinkLEDCmd::execute() {
 }
 
 bool BlinkLEDCmd::isFinished() {
-  return false;
+  // Stop blinking after 10 seconds
+  return (millis() - start_cmd_ > 10000);
+}
+
+void BlinkLEDCmd::end(bool interupted) {
+  Serial.println("LED Done");
+  led_.turnOff();
 }
