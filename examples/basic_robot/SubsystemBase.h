@@ -11,6 +11,11 @@ class SubsystemBase {
   // User overridable functions
   SubsystemBase();
   SubsystemBase(char name[]);
+
+  /**
+   * For now, set equality equal to the same object (address space)
+   */
+  bool operator==(const SubsystemBase& a) { return this == &a; }
   
   virtual void setup() {};
   virtual void periodic() {};

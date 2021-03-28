@@ -5,18 +5,27 @@ bool CommandBase::requires(SubsystemBase& requirement) {
 
   // Looks for an exact instance match in address space
   // This should verify the exact same object is used
-  for (int i=0; i<subsystem_count_; i++) {
-    requires |= (requirements_[i] == &requirement);
+  if(requirements_.moveToStart()) {
+    do {
+      if (requirements_.getCurrent() == requirement) {
+        return true;
+      }
+    } while (requirements_.next());
   }
 
-  return requires;
+  return false;
 }
 
-bool CommandBase::addRequirement(const SubsystemBase& requirement) {
-  if (subsystem_count_ >= 8) {
-    return false;
+bool CommandBase::addRequirement(SubsystemBase& requirement) {
+
+  if (!requires(requirement)) {
+    requirements_.Append(requirement);
+    return true;
   }
 
-  requirements_[subsystem_count_] = &requirement;
-  subsystem_count_++;
+  return false;
+}
+
+LinkedList<SubsystemBase&>& CommandBase::getRequirements() {
+  return requirements_;
 }

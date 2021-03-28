@@ -1,12 +1,20 @@
 #pragma once
 
 #include "SubsystemBase.h"
+#include "LinkedList.hpp"
+
 #if defined(ARDUINO) && ARDUINO >= 100
   #include "Arduino.h"
 #else
   #include "WProgram.h"
 #endif
+    
 class CommandBase {
+
+  private:
+      
+  private:
+    LinkedList<SubsystemBase&> requirements_;
 
   public:
 
@@ -48,12 +56,11 @@ class CommandBase {
      * Add the requiement to the command.  You can add a 
      * maximum of 8 subsystems.
      */
-    bool addRequirement(const SubsystemBase& requirement);
-    
-  private:
+    bool addRequirement(SubsystemBase& requirement);
 
-    int subsystem_count_ = 0;
-    SubsystemBase *requirements_[8] = {0};
-
+    /**
+     * Returns a linked list of requriements for this submodule
+     */
+    LinkedList<SubsystemBase&>& getRequirements();
   
 };

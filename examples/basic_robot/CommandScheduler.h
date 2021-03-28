@@ -3,6 +3,18 @@
 #include "CommandBase.h"
 #include "LinkedList.hpp"
 
+
+struct Command {
+  Command(bool inter, CommandBase& cmd) : interruptible(inter), command(cmd) {}
+  /**
+   * For now, set equality equal to the same object (address space)
+   */
+  bool operator==(const Command& a) { return this == &a; }
+  
+  bool interruptible{false};
+  CommandBase& command;
+};
+
 /**
  * The scheduler responsible for running Commands.  A Command-based robot should
  * call Run() on the singleton instance in its periodic block in order to run
@@ -13,9 +25,11 @@
 class CommandScheduler final {
 
   public:
-
+  
   LinkedList<SubsystemBase&> subsystems_;
-  LinkedList<CommandBase&> scheduled_commands_;
+  LinkedList<Command> scheduled_commands_;
+  LinkedList<SubsystemBase&> requirements_;
+  
   
   public:
   /**
@@ -92,6 +106,13 @@ class CommandScheduler final {
    */
   void setDefaultCommand(SubsystemBase& subsystem, CommandBase& defaultCommand); 
 
+  /**
+   * Cancels the given command, returning true for whether it was interrupted
+   * End will still be called
+   * 
+   * @param command The command to cancel
+   */
+  void cancel(Command& command);
 
   private:
   // Constructor; private as this is a singleton
