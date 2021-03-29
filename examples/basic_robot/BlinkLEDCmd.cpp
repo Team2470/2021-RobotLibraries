@@ -35,6 +35,7 @@ bool BlinkLEDCmd::isFinished() {
 }
 
 void BlinkLEDCmd::end(bool interupted) {
-  Serial.println("LED Done");
+  Serial.print("LED Done: int? ");
+  Serial.println(interupted);
   led_.turnOff();
 }

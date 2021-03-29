@@ -7,9 +7,9 @@
 struct Command {
   Command(bool inter, CommandBase& cmd) : interruptible(inter), command(cmd) {}
   /**
-   * For now, set equality equal to the same object (address space)
+   * For now, set equality equal to the same command object, regardless of interruptible status
    */
-  bool operator==(const Command& a) { return this == &a; }
+  bool operator==(const Command& a) { return (&command == &(a.command)); }
   
   bool interruptible{false};
   CommandBase& command;
@@ -106,17 +106,33 @@ class CommandScheduler final {
    */
   void setDefaultCommand(SubsystemBase& subsystem, CommandBase& defaultCommand); 
 
+
+  private:
+  // Constructor; private as this is a singleton
+  CommandScheduler();
+
   /**
-   * Cancels the given command, returning true for whether it was interrupted
-   * End will still be called
+   * Calls end and cleans up the command from the requirements and active command
+   * list.
+   * 
+   * @param command The command to cancel
+   * @param cancel  Whether the command was cancelled or not
+   */
+  void complete(Command& command, bool cancel);
+
+    /**
+   * Cancels the given command.
    * 
    * @param command The command to cancel
    */
   void cancel(Command& command);
 
-  private:
-  // Constructor; private as this is a singleton
-  CommandScheduler();
+  /** Finishes the given command
+   *  
+   *  @param command The command to call end and clean up after
+   */
+  void finish(Command& command);
+  
   
 };
   

@@ -15,8 +15,8 @@ Drivetrain drive;
 
 LEDSubsystem led;
 
-BlinkLEDCmd  led_blink(led, 500, 5000);
-BlinkLEDCmd  fast_blink(led, 250, 2000);
+BlinkLEDCmd  slow_blink(led, 500, 5000);
+BlinkLEDCmd  fast_blink(led, 100, 2000);
 
 /* Used to get the last time we updated the status */
 long lastStatusTime = millis();
@@ -28,6 +28,7 @@ long COMMS_LOST_MS = 1000;
 
 /* Button pressed tracking */
 bool btn_prev_a_ = false;
+bool btn_prev_b_ = false;
 
 
 /*************************************************************
@@ -59,7 +60,7 @@ void setup() {
 
   CommandScheduler::getInstance().registerSubsystem(led);
   
-  CommandScheduler::getInstance().schedule(led_blink);
+  CommandScheduler::getInstance().schedule(true, slow_blink);
 
   Serial.println("Setup complete!");
 }
@@ -129,16 +130,21 @@ void status_loop(DriverStation& dsStatus)
  */
 void teleop_loop(DriverStation& dsStatus) 
 {
-
   float forward  = dsStatus.gamepad1.getAxisFloat(GamepadAxis::LeftY);
   float turn = dsStatus.gamepad1.getAxisFloat(GamepadAxis::RightX); 
 
-  bool button = dsStatus.gamepad1.getButton(GamepadButton::A);
-
-  if (button && button != btn_prev_a_) {
+  bool btn_a = dsStatus.gamepad1.getButton(GamepadButton::A);
+  bool btn_b = dsStatus.gamepad1.getButton(GamepadButton::B);
+  
+  if (btn_a && btn_a != btn_prev_a_) {
     CommandScheduler::getInstance().schedule(fast_blink);
   }
-  btn_prev_a_ = button;
+  btn_prev_a_ = btn_a;
+
+  if (btn_b && btn_b != btn_prev_b_) {
+    CommandScheduler::getInstance().schedule(true, slow_blink);
+  }
+  btn_prev_b_ = btn_b;
 
   // Pass axes to arcade drive
   drive.arcade(forward, turn, true);

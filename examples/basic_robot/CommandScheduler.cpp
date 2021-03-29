@@ -30,6 +30,7 @@ void CommandScheduler::schedule(bool interruptible, CommandBase& command) {
   
   if(requirements.moveToStart()) {
     do {
+      
       // This is a fairly slow implementation, but should be good enough if the number
       // of commands is low.
       if(requirements_.Search(requirements.getCurrent())) {
@@ -47,7 +48,7 @@ void CommandScheduler::schedule(bool interruptible, CommandBase& command) {
       }
     } while (requirements.next());
   }
-
+  
   // If we are allowed to schedule it, go ahead
   if (is_disjoint || all_interruptible) {
     if (all_interruptible) {
@@ -89,19 +90,14 @@ void CommandScheduler::run() {
   if(scheduled_commands_.moveToStart()) {
     do {
 
-      auto& command = scheduled_commands_.getCurrent().command;
+      auto& cmd = scheduled_commands_.getCurrent();
       auto interruptible = scheduled_commands_.getCurrent().interruptible;
       
       // Run execute.  We don't have other actions to check
-      command.execute();
+      cmd.command.execute();
 
-      if (command.isFinished()) {
-        command.end(false);
-        
-        // TODO: Remove from list of active requirements (also, track requirements)
-
-        // Delete the current item, then continue to skip calling next
-        scheduled_commands_.DeleteCurrent();
+      if (cmd.command.isFinished()) {
+        finish(cmd);
         
         // We modified the list, so use continue to read the next or break out
         if (scheduled_commands_.getLength() == 0) {
@@ -117,7 +113,9 @@ void CommandScheduler::run() {
 }
 
 void CommandScheduler::registerSubsystem(SubsystemBase& subsystem) {
-  subsystems_.Append(subsystem);
+  if(!subsystems_.Search(subsystem)) {
+    subsystems_.Append(subsystem);
+  }
 }
 
 void CommandScheduler::setDefaultCommand(SubsystemBase& subsystem, CommandBase& defaultCommand) {
@@ -134,18 +132,23 @@ void CommandScheduler::setDefaultCommand(SubsystemBase& subsystem, CommandBase& 
   // TODO: Create default command array for subsystem
 }
 
-void CommandScheduler::cancel(Command& command) {
 
+CommandScheduler::CommandScheduler() {
+//  scheduler->enabled = [this] {
+//    this->Disable();
+//    this->CancelAll();
+//  };
+//  scheduler->disabled = [this] { this->Enable(); };
+}
+
+void CommandScheduler::complete(Command& command, bool cancel) {
   // Check if the command is in the schedule
   if (!scheduled_commands_.Search(command)) {
     return;
   }
 
   // Finish the command
-  command.command.end(true);
-
-  // Find the command in the schedule and remove it
-  scheduled_commands_.Delete(command);
+  command.command.end(cancel);
 
   // Remove it's requirements from the list
   const auto& requirements = command.command.getRequirements();
@@ -154,12 +157,16 @@ void CommandScheduler::cancel(Command& command) {
         requirements_.Delete(requirements.getCurrent());
     } while (requirements.next());
   }
+
+  // Find the command in the schedule and remove it
+  scheduled_commands_.Delete(command);
+
 }
 
-CommandScheduler::CommandScheduler() {
-//  scheduler->enabled = [this] {
-//    this->Disable();
-//    this->CancelAll();
-//  };
-//  scheduler->disabled = [this] { this->Enable(); };
+void CommandScheduler::cancel(Command& command) {
+  complete(command, true);
+}
+
+void CommandScheduler::finish(Command& command) {
+  complete(command, false);
 }

@@ -1,7 +1,6 @@
 #include "SubsystemBase.h"
 #include "string.h"
 
-
 SubsystemBase::SubsystemBase() {}
 
 SubsystemBase::SubsystemBase(char name[]) {
