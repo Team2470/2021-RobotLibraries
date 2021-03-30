@@ -8,7 +8,9 @@
 #else
   #include "WProgram.h"
 #endif
-    
+
+#define SIZEOF(a) ( sizeof a / sizeof a[0] )
+
 class CommandBase {
 
   private:
@@ -58,6 +60,11 @@ class CommandBase {
      */
     bool addRequirement(SubsystemBase& requirement);
 
+    /**
+     * Adds a list of requirements.  Useful in command group classes
+     */
+    bool addRequirements(LinkedList<SubsystemBase&> requires);
+    
     /**
      * Returns a linked list of requriements for this submodule
      */

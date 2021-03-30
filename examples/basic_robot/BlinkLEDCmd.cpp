@@ -16,6 +16,7 @@ void BlinkLEDCmd::initialize() {
   led_.turnOn();
   last_blink_ = millis();
   start_cmd_ = millis();
+  Serial.println("LED Initialize!");
 }
 
 void BlinkLEDCmd::execute() {

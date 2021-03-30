@@ -6,6 +6,7 @@
 #include "LEDSubsystem.h"
 #include "CommandScheduler.h"
 #include "BlinkLEDCmd.h"
+#include "SequentialCommandGroup.h"
 
 /*************************************************************
  ****************** Modules / Libraries **********************
@@ -18,6 +19,9 @@ LEDSubsystem led;
 BlinkLEDCmd  slow_blink(led, 500, 5000);
 BlinkLEDCmd  fast_blink(led, 100, 2000);
 
+CommandBase *cmds[] = {&fast_blink, &slow_blink, &fast_blink};
+SequentialCommandGroup blink_pattern(SIZEOF(cmds), cmds);
+
 /* Used to get the last time we updated the status */
 long lastStatusTime = millis();
 long STATUS_UPDATE_MS = 2000;
@@ -29,7 +33,7 @@ long COMMS_LOST_MS = 1000;
 /* Button pressed tracking */
 bool btn_prev_a_ = false;
 bool btn_prev_b_ = false;
-
+bool btn_prev_x_ = false;
 
 /*************************************************************
  *********************** Main Code ***************************
@@ -135,6 +139,7 @@ void teleop_loop(DriverStation& dsStatus)
 
   bool btn_a = dsStatus.gamepad1.getButton(GamepadButton::A);
   bool btn_b = dsStatus.gamepad1.getButton(GamepadButton::B);
+  bool btn_x = dsStatus.gamepad1.getButton(GamepadButton::X);
   
   if (btn_a && btn_a != btn_prev_a_) {
     CommandScheduler::getInstance().schedule(fast_blink);
@@ -145,6 +150,11 @@ void teleop_loop(DriverStation& dsStatus)
     CommandScheduler::getInstance().schedule(true, slow_blink);
   }
   btn_prev_b_ = btn_b;
+
+  if (btn_x && btn_x != btn_prev_x_) {
+    CommandScheduler::getInstance().schedule(true, blink_pattern);
+  }
+  btn_prev_x_ = btn_x;
 
   // Pass axes to arcade drive
   drive.arcade(forward, turn, true);

@@ -26,6 +26,14 @@ bool CommandBase::addRequirement(SubsystemBase& requirement) {
   return false;
 }
 
+bool CommandBase::addRequirements(LinkedList<SubsystemBase&> requires) {
+  if(requires.moveToStart()) {
+    do {
+      addRequirement(requires.getCurrent());
+    } while (requires.next());
+  }
+}
+
 LinkedList<SubsystemBase&>& CommandBase::getRequirements() {
   return requirements_;
 }
