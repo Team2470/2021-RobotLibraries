@@ -109,7 +109,6 @@ void CommandScheduler::run() {
 
     } while (scheduled_commands_.next());
   }
-  
 }
 
 void CommandScheduler::registerSubsystem(SubsystemBase& subsystem) {
@@ -121,7 +120,7 @@ void CommandScheduler::registerSubsystem(SubsystemBase& subsystem) {
 void CommandScheduler::setDefaultCommand(SubsystemBase& subsystem, CommandBase& defaultCommand) {
   if (!defaultCommand.requires(subsystem)) {
     // Default commands require subsystems
-    Serial.println("Canot set default. Command doesn't require subsystem.");
+    Serial.println("Cannot set default. Command doesn't require subsystem.");
     return;
   }
   if (defaultCommand.isFinished()) {
@@ -130,6 +129,13 @@ void CommandScheduler::setDefaultCommand(SubsystemBase& subsystem, CommandBase& 
   }
 
   // TODO: Create default command array for subsystem
+}
+
+void CommandScheduler::cancelAll() {
+  // Cancel with extreme prejudice
+  while(scheduled_commands_.getLength() > 0) {
+    cancel(scheduled_commands_.First());
+  }
 }
 
 

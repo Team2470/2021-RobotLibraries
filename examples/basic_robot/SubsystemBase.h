@@ -27,7 +27,6 @@ class SubsystemBase {
    */
   bool operator==(const SubsystemBase& a) { return (this == &a); }
   
-  virtual void setup() {};
   virtual void periodic() {};
 
   char* getName();

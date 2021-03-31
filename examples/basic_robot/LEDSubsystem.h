@@ -8,7 +8,7 @@ class LEDSubsystem : public SubsystemBase {
     LEDSubsystem();
 
 
-    void setup() override;
+    void setup(int led_pin);
 
     void periodic() override;
 

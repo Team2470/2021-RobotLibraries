@@ -106,6 +106,10 @@ class CommandScheduler final {
    */
   void setDefaultCommand(SubsystemBase& subsystem, CommandBase& defaultCommand); 
 
+  /**
+   * Cancels all commands that are currently scheduled.
+   */
+  void cancelAll();
 
   private:
   // Constructor; private as this is a singleton
