@@ -198,5 +198,6 @@ void teleop_loop(DriverStation& dsStatus)
  */
 void disable()
 {
-    drive.setPower(0.0f, 0.0f);
+  CommandScheduler::getInstance().cancelAll();
+  drive.setPower(0.0f, 0.0f);
 }
