@@ -6,10 +6,9 @@
  *  1. Replace the your_name_here with up to 18 charcters in the AROBOT_NAME line.
  *  2. Download the code to your robot.
  *  3. Unplug the USB port, pug in your RF module and then power up.
- *  4. Wait several seconds then power back down.
- *  5. Repeat the power up and power down process, it can take 2 boots to write both registers properly
- *  6. The name change will be written on the first power up,
- *     But it will show up every time you power up after that.
+ *  4. Wait for the LED on the board to blink
+ *  5. Repeat the power up and power down process, it can take 3 boots to write both registers properly
+ *  6. Check to see if the bluetooth name has changed in a scanner
  *  7. Unplug the bluetooth module, hook up the USB and load your normal code.
  *  
  *  This program only needs to be run once.
@@ -26,37 +25,32 @@ char ROBOT_NAME[] = "your_name_here";
 void setup() {
   // Change the Bluetooth advertising name.
   Serial.begin(9600);
-  while(!Serial);
   delay(500);
-
-  // Flush any spurious command data
-  Serial.print("\r\n");
-  
+  Serial.print("AT+BAUD4\r\n");
+  delay(500);
   Serial.print("AT+NAME");
-  Serial.print(ROBOT_NAME);
+  Serial.print("Configuring...");
   Serial.print("\r\n");
-  delay(500);
-  
-  Serial.print("AT+BAUD=4\r\n");
   Serial.flush();
   delay(500);
-  Serial.end();
-
+  
   // In case they just want to change the name, also function if the baud is set to 115200
   Serial.begin(115200);
-  while(!Serial);
   delay(500);
-
-  // Flush any spurious command data
-  Serial.print("\r\n");
-  
   Serial.print("AT+NAME");
   Serial.print(ROBOT_NAME);
   Serial.print("\r\n");
   delay(500);
+
+  pinMode(13, OUTPUT);
+  digitalWrite(13, HIGH);
 }
 
-void loop() {
-  // put your main code here, to run repeatedly:
+bool blink = false;
 
+void loop() {
+  // When setup is done, blink the LED
+  blink = !blink;
+  digitalWrite(13, blink ? HIGH : LOW);
+  delay(500);
 }

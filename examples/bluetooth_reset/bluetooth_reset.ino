@@ -5,7 +5,7 @@
  * Instructions:
  *  1. Download the code to your robot.
  *  2. Unplug the USB port, pug in your RF module and then power up.
- *  3. Wait several seconds then power back down.
+ *  3. Wait for the LED on the board to blink
  *  4. Repeat the power up and power down process, it can take 2 boots to write both registers properly
  *  5. The name change will be written on the first power up,
  *     But it will show up every time you power up after that.
@@ -16,46 +16,36 @@
  *  
  */
 
-// ****** DO NOT Modify - Name required by Elegoo App ******
-char ROBOT_NAME[] = "ELEGOO BT16";
-
 /*
  * Do not modify this function
  */
 void setup() {
   // Change the name and restore the baud rate
   Serial.begin(115200);
-  while(!Serial);
   delay(500);
-  
-  // Flush any spurious command data
-  Serial.print("\r\n");
-  
-  Serial.print("AT+NAME");
-  Serial.print(ROBOT_NAME);
-  Serial.print("\r\n");
+
+  // Reset the name and baud back to default
+  Serial.print("AT+BAUD0\r\n");
   delay(500);
-  
-  Serial.print("AT+BAUD=0\r\n");
+  Serial.print("AT+NAMEResetting...\r\n");
   Serial.flush();
   delay(500);
-  Serial.end();
-
+  
   // In case the baud was already set, just reset the name
   Serial.begin(9600);
-  while(!Serial);
+  delay(500);
+  Serial.print("AT+NAMEELEGOO BT16\r\n");
   delay(500);
 
-  // Flush any spurious command data
-  Serial.print("\r\n");
-  
-  Serial.print("AT+NAME");
-  Serial.print(ROBOT_NAME);
-  Serial.print("\r\n");
-  delay(500);
+  pinMode(13, OUTPUT);
+  digitalWrite(13, HIGH);
 }
 
-void loop() {
-  // put your main code here, to run repeatedly:
+bool blink = false;
 
+void loop() {
+  // When setup is done, blink the LED
+  blink = !blink;
+  digitalWrite(13, blink ? HIGH : LOW);
+  delay(500);
 }
