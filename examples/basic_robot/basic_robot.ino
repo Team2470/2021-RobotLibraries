@@ -1,18 +1,10 @@
 #include <DSProtocol.h>
 #include <DSState.h>
 #include <Drivetrain.h>
+
+#include <CommandBasedRobot.h>
+
 #include "Constants.h"
-
-#include "CommandScheduler.h"
-
-#include "HeadSubsystem.h"
-#include "LEDSubsystem.h"
-#include "SequentialCommandGroup.h"
-#include "ParallelCommandGroup.h"
-
-#include "BlinkLEDCmd.h"
-#include "ScanHeadCmd.h"
-#include "WaitCmd.h"
 
 /*************************************************************
  ****************** Modules / Libraries **********************

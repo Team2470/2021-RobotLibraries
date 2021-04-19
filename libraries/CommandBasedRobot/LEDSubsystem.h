@@ -32,5 +32,6 @@ class LEDSubsystem : public SubsystemBase {
     private:
 
     // Necessary subsystem classes go here
+    int led_pin_;
 
 };

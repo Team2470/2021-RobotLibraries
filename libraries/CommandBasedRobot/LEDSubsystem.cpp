@@ -1,5 +1,4 @@
 #include "LEDSubsystem.h"
-#include "Constants.h"
 
 // Libraries need to include Arduino.h or WProgram.h to use Serial
 #if defined(ARDUINO) && ARDUINO >= 100
@@ -14,22 +13,23 @@ LEDSubsystem::LEDSubsystem()
   : SubsystemBase("LED") {}
 
 void LEDSubsystem::setup(int led_pin) {
-  pinMode(led_pin, OUTPUT);
-  digitalWrite(led_pin, LOW);
+    led_pin_ = led_pin;
+    pinMode(led_pin_, OUTPUT);
+    digitalWrite(led_pin, LOW);
 }
 
 void LEDSubsystem::periodic() {
-  // Add any periodic tasks you would need here
+    // Add any periodic tasks you would need here
 }
 
 void LEDSubsystem::turnOn() {
-  digitalWrite(DO_LED, HIGH);
+    digitalWrite(led_pin_, HIGH);
 }
 
 void LEDSubsystem::turnOff() {
-  digitalWrite(DO_LED, LOW);
+    digitalWrite(led_pin_, LOW);
 }
 
 bool LEDSubsystem::isOn() {
-  return digitalRead(DO_LED);
+    return digitalRead(led_pin_);
 }

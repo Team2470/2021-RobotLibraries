@@ -1,5 +1,4 @@
 #include "HeadSubsystem.h"
-#include "Constants.h"
 
 // Libraries need to include Arduino.h or WProgram.h to use Serial
 #if defined(ARDUINO) && ARDUINO >= 100
@@ -14,7 +13,9 @@ HeadSubsystem::HeadSubsystem()
   : SubsystemBase("Head") {}
 
 void HeadSubsystem::setup(int servo_pin, int us_tx_pin, int us_rx_pin) {
-  neck.attach(servo_pin);
+  neck_.attach(servo_pin);
+  us_tx_pin_ = us_tx_pin;
+  us_rx_pin_ = us_rx_pin;
 }
 
 void HeadSubsystem::periodic() {
@@ -27,14 +28,14 @@ void HeadSubsystem::periodic() {
 void HeadSubsystem::setAngleDeg(int deg) {
   if (deg < 0) deg = 0;
   if (deg > 180) deg = 180;
-  neck.write(deg);
+  neck_.write(deg);
 }
 
 /**
  * Gets the angle of the head
  */
 int HeadSubsystem::getAngleDeg() {
-  return neck.read();
+  return neck_.read();
 }
 
 /**

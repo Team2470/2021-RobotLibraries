@@ -32,6 +32,8 @@ class HeadSubsystem : public SubsystemBase {
     private:
 
     // Necessary subsystem classes go here
-    Servo neck;
+    Servo neck_;
+    int us_tx_pin_;
+    int us_rx_pin_;
 
 };
