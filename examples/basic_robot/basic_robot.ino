@@ -1,7 +1,15 @@
 #include <DSProtocol.h>
 #include <DSState.h>
 #include <Drivetrain.h>
+#include <CommandBasedRobot.h>
 
+#include "Constants.h"
+
+#include "LEDSubsystem.h"
+#include "HeadSubsystem.h"
+
+#include "BlinkLEDCmd.h"
+#include "ScanHeadCmd.h"
 
 /*************************************************************
  ****************** Modules / Libraries **********************
@@ -9,6 +17,33 @@
 DSProtocol comms;
 Drivetrain drive;
 
+LEDSubsystem led;
+HeadSubsystem head;
+
+/*************************************************************
+ ************** Commands the robot will use ******************
+ *************************************************************/
+ 
+BlinkLEDCmd slow_blink(led, 500, 5000);
+BlinkLEDCmd fast_blink(led, 100, 2000);
+WaitCmd     wait_1s(1000);
+ScanHeadCmd scan_head(head, 3500, 0, 180);
+
+/*************************************************************
+ ********* Commands Sequences the robot will use *************
+ *************************************************************/
+ 
+CommandBase *bp_cmds[] = {&fast_blink, &wait_1s, &slow_blink, &wait_1s, &fast_blink};
+SequentialCommandGroup blink_pattern(SIZEOF(bp_cmds), bp_cmds);
+
+CommandBase *sab_cmds[] {&scan_head, &blink_pattern};
+ParallelCommandGroup scan_and_blink(SIZEOF(sab_cmds), sab_cmds);
+
+
+/*************************************************************
+ ********** Robot state tracking (Do not edit) ***************
+ *************************************************************/
+ 
 /* Used to get the last time we updated the status */
 long lastStatusTime = millis();
 long STATUS_UPDATE_MS = 2000;
@@ -17,18 +52,12 @@ long STATUS_UPDATE_MS = 2000;
 long lastCommsTime = millis();
 long COMMS_LOST_MS = 1000;
 
-/*************************************************************
- ********************* Hardware Setup ************************
- *************************************************************/
-#define DO_LM_PWM  5   // Left Motor Speed
-#define DO_RM_PWM  6   // Right Motor Speed
-#define DO_LM_REV  7   // Left Motor - Reverse
-#define DO_LM_FWD  8   // Left Motor - Forward
-#define DO_RM_REV  9   // Right Motor - Reverse
-#define DO_RM_FWD 11   // Right Motor - Forward
-
-#define DO_LED    13   // LED output on the Uno
-
+/* Button pressed tracking */
+bool btn_prev_a_ = false;
+bool btn_prev_b_ = false;
+bool btn_prev_x_ = false;
+bool btn_prev_y_ = false;
+bool btn_prev_start_ = false;
 
 /*************************************************************
  *********************** Main Code ***************************
@@ -46,17 +75,24 @@ void setup() {
   //
 
   // This should match the serial or Bluetooth rate
-  Serial.begin(57600);
+  Serial.begin(115200);
   while (!Serial); // wait for Leonardo enumeration, others continue immediately
   Serial.println("Ready");
 
   //
   // Hardware initailization
-  //
+  //   Sets the I/O pins and other settings used by the subsystems
   drive.setup(DO_LM_FWD, DO_LM_REV, DO_LM_PWM,
               DO_RM_FWD, DO_RM_REV, DO_RM_PWM);
+              
+  led.setup(DO_LED);
+  head.setup(DO_NECK, ALG_US_TX, ALG_US_RX);
 
-  pinMode(DO_LED, OUTPUT);
+  // Register the subsystem periodic calls with the scheduler
+  CommandScheduler::getInstance().registerSubsystem(led);
+  CommandScheduler::getInstance().registerSubsystem(head);
+  
+  Serial.println("Setup complete!");
 }
 
 /**
@@ -64,14 +100,20 @@ void setup() {
  *
  * This is the main loop, it will be called repeatedly until the robot is turned off.
  * Do not perform any blocking calls or your robot will hang up and not work.
+ * 
+ * You should not have to modify this if you are using the driver stations.  Instead, modify the
+ * teleop loop function.
  */
 void loop() {
 
+  // TODO: Change to only run the scheduler when enabled?
+  CommandScheduler::getInstance().run();
+  
   // Only react if we have received new packets, otherwise wait
   if (comms.process()) 
   {
     DriverStation dsStatus = comms.getStatus();
-
+      
     if (dsStatus.enabled) 
     {
       // For now, always run teleop mode, in the future use mode to switch
@@ -94,9 +136,11 @@ void loop() {
     lastCommsTime = millis();
   } 
 
-  //Serial.println("No new data received, waiting...");
+  // Delay some, otherwise we try to read/send too fast
   delay(20);
 
+  // Check if we still have communications to the driver station
+  // Disable if we lose communication
   if ((millis() - lastCommsTime) > COMMS_LOST_MS) 
   {
     disable();
@@ -121,21 +165,42 @@ void status_loop(DriverStation& dsStatus)
  */
 void teleop_loop(DriverStation& dsStatus) 
 {
-
   float forward  = dsStatus.gamepad1.getAxisFloat(GamepadAxis::LeftY);
   float turn = dsStatus.gamepad1.getAxisFloat(GamepadAxis::RightX); 
 
-  bool led_on = dsStatus.gamepad1.getButton(GamepadButton::A);
+  bool btn_a     = dsStatus.gamepad1.getButton(GamepadButton::A);
+  bool btn_b     = dsStatus.gamepad1.getButton(GamepadButton::B);
+  bool btn_x     = dsStatus.gamepad1.getButton(GamepadButton::X);
+  bool btn_y     = dsStatus.gamepad1.getButton(GamepadButton::Y);
+  bool btn_start = dsStatus.gamepad1.getButton(GamepadButton::Start);
+  
+  if (btn_a && btn_a != btn_prev_a_) {
+    CommandScheduler::getInstance().schedule(fast_blink);
+  }
+  btn_prev_a_ = btn_a;
+
+  if (btn_b && btn_b != btn_prev_b_) {
+    CommandScheduler::getInstance().schedule(true, scan_head);
+  }
+  btn_prev_b_ = btn_b;
+
+  if (btn_x && btn_x != btn_prev_x_) {
+    CommandScheduler::getInstance().schedule(true, blink_pattern);
+  }
+  btn_prev_x_ = btn_x;
+
+  if (btn_y && btn_y != btn_prev_y_) {
+    CommandScheduler::getInstance().schedule(true, scan_and_blink);
+  }
+  btn_prev_y_ = btn_y;
+  
+  if (btn_start && btn_start != btn_prev_start_) {
+    CommandScheduler::getInstance().cancelAll();
+  }
+  btn_prev_start_ = btn_start;
 
   // Pass axes to arcade drive
   drive.arcade(forward, turn, true);
-
-  // Flash the LED with the button press
-  if (led_on) {
-    digitalWrite(DO_LED, HIGH);
-  } else {
-    digitalWrite(DO_LED, LOW);
-  }
 }
 
 /**
@@ -146,6 +211,6 @@ void teleop_loop(DriverStation& dsStatus)
  */
 void disable()
 {
-    digitalWrite(DO_LED, LOW);
-    drive.setPower(0.0f, 0.0f);
+  CommandScheduler::getInstance().cancelAll();
+  drive.setPower(0.0f, 0.0f);
 }

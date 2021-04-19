@@ -72,31 +72,34 @@
 bool DSProtocol::process() {
 
 
-	// TODO: Handle the case where our buffer isn't completely empty at the end of processing, indicating 
-	// TODO: a partial packet is stuck in the queue.
-	
-    /* Holds the the bytes we have received, but not processed*/
-    char buffer[64];
-
-    /* The number of valid bytes in the buffer (should be less than the length) */
-    uint8_t buffer_len = 0;
-
 	// If any serial bytes are received, scan to see if a start
 	// of message has been received.  Remove any bytes that precede
 	// the start of a message.
 	bool found_start_of_message = false;
 	bool new_packets = false;
 
-	while ( Serial.available() > 0 ) {
-		char rcv_byte = Serial.peek();
-
-		if ( rcv_byte != PACKET_START_CHAR ) {
-			Serial.read();
-		} else {
-			delay(2);
+	// Check for start of characters in the buffer
+	for(int i = 0; i < buffer_start; i++) {
+		if ( buffer[i] == PACKET_START_CHAR ) {
 			found_start_of_message = true;
-			// Serial.println("found_start_message");
+			// Serial.println("found_start_message prev packet");
 			break;
+		}
+	}
+
+	// If we didn't previously receive any, check the current feed
+	if (!found_start_of_message) {
+	    while ( Serial.available() > 0 ) {
+		    char rcv_byte = Serial.peek();
+
+			if ( rcv_byte != PACKET_START_CHAR ) {
+				Serial.read();
+			} else {
+				delay(2);
+				found_start_of_message = true;
+				// Serial.println("found_start_message");
+				break;
+			}
 		}
 	}
 
@@ -106,19 +109,22 @@ bool DSProtocol::process() {
 
 	// If sufficient bytes have been received, process the data and
 	// if a valid message is received, handle it.
+	int last_processed_byte = 0;
+	int bytes_read = 0;
 	if ( found_start_of_message && ( Serial.available() >= MIN_UART_MESSAGE_LENGTH ) ) {
-		int bytes_read = 0;
+
 		while ( Serial.available() ) {
-			if ( bytes_read >= sizeof(buffer) ) {
+			if ( bytes_read + buffer_start >= sizeof(buffer) ) {
 				break;
 			}
-			buffer[bytes_read++] = Serial.read();
+			buffer[bytes_read + buffer_start] = Serial.read();
+			bytes_read++;
 		}
 
 		int i = 0;
 		// Scan the buffer looking for valid packets
-		while (i < bytes_read) {
-			int bytes_remaining = bytes_read - i;
+		while (i < bytes_read + buffer_start) {
+			int bytes_remaining = bytes_read + buffer_start - i;
 			char stream_type;
 			int packet_length = 0;
 
@@ -138,10 +144,23 @@ bool DSProtocol::process() {
 
 			if (packet_length > 0) {
 				i += packet_length;
+				last_processed_byte = i;
 			} else {
 				i++;
 			}
 		}
+	}
+
+
+	// Handle the leftover bytes by shuffling to the front (has to be a better way...)
+	int leftover = (bytes_read + buffer_start - last_processed_byte);
+	for (int j=0; j < leftover; j++) {
+		if (j + last_processed_byte < sizeof(buffer)) {
+			buffer[j] = buffer[j+last_processed_byte];
+		} else {
+			break;
+		}
+		buffer_start = j+1;
 	}
 
 	return new_packets;

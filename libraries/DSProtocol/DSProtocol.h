@@ -15,6 +15,12 @@ private:
   /* Holds the current driver station status */
   DriverStation ds;
 
+ /* Holds our currently received characters */
+  char buffer[128];
+
+  /* The number of valid bytes in the buffer (should be less than the length) */
+  int buffer_start = 0;
+
 /*************************************************************
  ******************* Public Functions ***********************
  *************************************************************/
