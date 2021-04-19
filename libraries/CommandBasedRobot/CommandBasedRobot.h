@@ -1,12 +1,11 @@
 // Includes all required command based headers and examples
 
+// Main Scheduler
 #include "CommandScheduler.h"
 
-#include "HeadSubsystem.h"
-#include "LEDSubsystem.h"
+// Command Groups
 #include "SequentialCommandGroup.h"
 #include "ParallelCommandGroup.h"
 
-#include "BlinkLEDCmd.h"
-#include "ScanHeadCmd.h"
+// Included commands (very basic ones)
 #include "WaitCmd.h"

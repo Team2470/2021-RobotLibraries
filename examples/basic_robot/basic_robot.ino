@@ -1,10 +1,15 @@
 #include <DSProtocol.h>
 #include <DSState.h>
 #include <Drivetrain.h>
-
 #include <CommandBasedRobot.h>
 
 #include "Constants.h"
+
+#include "LEDSubsystem.h"
+#include "HeadSubsystem.h"
+
+#include "BlinkLEDCmd.h"
+#include "ScanHeadCmd.h"
 
 /*************************************************************
  ****************** Modules / Libraries **********************
@@ -15,18 +20,30 @@ Drivetrain drive;
 LEDSubsystem led;
 HeadSubsystem head;
 
+/*************************************************************
+ ************** Commands the robot will use ******************
+ *************************************************************/
+ 
 BlinkLEDCmd slow_blink(led, 500, 5000);
 BlinkLEDCmd fast_blink(led, 100, 2000);
 WaitCmd     wait_1s(1000);
-
 ScanHeadCmd scan_head(head, 3500, 0, 180);
 
+/*************************************************************
+ ********* Commands Sequences the robot will use *************
+ *************************************************************/
+ 
 CommandBase *bp_cmds[] = {&fast_blink, &wait_1s, &slow_blink, &wait_1s, &fast_blink};
 SequentialCommandGroup blink_pattern(SIZEOF(bp_cmds), bp_cmds);
 
 CommandBase *sab_cmds[] {&scan_head, &blink_pattern};
 ParallelCommandGroup scan_and_blink(SIZEOF(sab_cmds), sab_cmds);
 
+
+/*************************************************************
+ ********** Robot state tracking (Do not edit) ***************
+ *************************************************************/
+ 
 /* Used to get the last time we updated the status */
 long lastStatusTime = millis();
 long STATUS_UPDATE_MS = 2000;
@@ -58,24 +75,23 @@ void setup() {
   //
 
   // This should match the serial or Bluetooth rate
-  Serial.begin(57600);
+  Serial.begin(115200);
   while (!Serial); // wait for Leonardo enumeration, others continue immediately
   Serial.println("Ready");
 
   //
   // Hardware initailization
-  //
+  //   Sets the I/O pins and other settings used by the subsystems
   drive.setup(DO_LM_FWD, DO_LM_REV, DO_LM_PWM,
               DO_RM_FWD, DO_RM_REV, DO_RM_PWM);
               
   led.setup(DO_LED);
   head.setup(DO_NECK, ALG_US_TX, ALG_US_RX);
 
+  // Register the subsystem periodic calls with the scheduler
   CommandScheduler::getInstance().registerSubsystem(led);
   CommandScheduler::getInstance().registerSubsystem(head);
   
-  CommandScheduler::getInstance().schedule(true, slow_blink);
-
   Serial.println("Setup complete!");
 }
 
@@ -84,6 +100,9 @@ void setup() {
  *
  * This is the main loop, it will be called repeatedly until the robot is turned off.
  * Do not perform any blocking calls or your robot will hang up and not work.
+ * 
+ * You should not have to modify this if you are using the driver stations.  Instead, modify the
+ * teleop loop function.
  */
 void loop() {
 
@@ -117,9 +136,11 @@ void loop() {
     lastCommsTime = millis();
   } 
 
-  //Serial.println("No new data received, waiting...");
+  // Delay some, otherwise we try to read/send too fast
   delay(20);
 
+  // Check if we still have communications to the driver station
+  // Disable if we lose communication
   if ((millis() - lastCommsTime) > COMMS_LOST_MS) 
   {
     disable();
