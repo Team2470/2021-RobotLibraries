@@ -60,10 +60,7 @@ public:
     bool enabled;
     uint8_t mode;
 
-    uint8_t switchState;
-
-    Gamepad gamepad1;
-    Gamepad gamepad2;
+    Gamepad gamepad;
 };
 
 #endif // _DS_STATE_H_

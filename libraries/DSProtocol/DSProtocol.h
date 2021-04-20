@@ -16,10 +16,26 @@ private:
   DriverStation ds;
 
  /* Holds our currently received characters */
-  char buffer[128];
+  char buffer_[128];
 
   /* The number of valid bytes in the buffer (should be less than the length) */
-  int buffer_start = 0;
+  int buffer_pos_ = 0;
+
+
+  /* Decoder state machine conditions */
+  typedef enum 
+  {
+    DECODE_RESET,  /// Decoder reset state
+    DECODE_START,  /// Decoder start condition
+
+    DECODE_SOF1,   /// Decoder start of frame character 1
+    DECODE_SOF2,   /// Decoder start of frame character 2
+    DECODE_PAY,    /// Decoder Payload
+    DECODE_CRC,    /// Deocder CRC step
+
+  } DECODE_STATE_E;
+
+  uint8_t state_ = DECODE_RESET;
 
 /*************************************************************
  ******************* Public Functions ***********************
@@ -49,92 +65,44 @@ public:
 private:
 
   /**
-   * Decoder for the main driver station control packet, ignores joystick packets
+   * Decoder for the main driver station control packet
    *
-   * @param[out] estopped True if the estop is pressed
-   * @param[out] enabled  True if enabled
+   * @param[in] buffer The buffer to try parsing as a packet
+   * @param[in] buffer_len  The number of bytes in the buffer
    * @param[out] mode     The current mode of the system
    * @param[out] switchState The state of each switch
    *
-   * @return The length of the fully decoded packet
+   * @return True if the packet decoded successfully, false otherwise
    */
-  int decodeDSControlPacket(uint8_t buffer[], uint8_t buffer_len, bool& estopped, bool& enabled, uint8_t& mode, uint8_t& switchState);
+  bool decodeDSControlPacket(uint8_t buffer[], int buffer_len);
 
-  /**
-   * Decoder for the joystick packet
-   * Joystick Packet - ![j/J][button word][leftXAxis][leftYAxis][rightXAxis][rightYAxis][triggerLeftAxis][triggerRightAxis][checksum][cr][lf]
-   *
-   * @param[in]  joystick_id The id of the joystick to parse
-   * @param[out] buttonWord  Decoded button status
-   * @param[out] axis[]      Decoded axis information
-   * @return The length of the fully decoded packet
-   */
-  int decodeJoystickPacket(uint8_t buffer[], uint8_t buffer_len, uint8_t joystick_id, uint16_t& buttonWord, int8_t axis[]);
-
-  /**
-   * Encode the current robot status to send to the driver station
-   *
-   * @param estopped         True if the robot is estopped
-   * @param enabled          True if the robot is enabled
-   * @param mode             The current robot mode
-   * @param protocol_version The current version of the protocol
-   * @return The length of the robot status packet
-   */
-  int encodeRobotStatus(uint8_t buffer[], uint8_t buffer_len, bool estopped, bool enabled, uint8_t mode, uint8_t protocol_version);
-
-
-  /** 
-   * Encodes the termination onto the packet before sending
-   *
-   * @param total_length   The overall length of the packet
-   * @param content_length The length of the payload
-   */
-  void encodeTermination(uint8_t buffer[], uint8_t buffer_len, int total_length, int content_length );
-  
   /** 
    * Verifies the protocol checksum returning true if it passes
    *
    * @param content_length The length of the payload
    */
-  bool verifyChecksum(uint8_t buffer[], uint8_t buffer_len, int content_length );
-
+  bool verifyChecksum(uint8_t buffer[], int buffer_len, int content_length );
 
   /*************************************************************
-   * Primative encode/decode functions
+   * Buffer Manipulation
    *************************************************************/
 
+  /**
+   * Push a new character onto the internal buffer 
+   *
+   * @param[in] data The character to push
+   */
+  void pushData(char data);
 
   /**
-   * Decode 16 bit value from 2 characters (1 byte)
-   *
-   * @param[in] data A 2 character hex string
-   * @return The decoded value
+   * Remove the oldest chracter to allow reintrepretation of the buffer
    */
-  uint8_t decodeUint8( char *data );
+  void popData();
 
   /**
-   * Decode 16 bit value from 4 characters (2 bytes)
-   *
-   * @param[in] data a 4 character hex string
-   * @return The decoded value
+   * Reset data buffers
    */
-  uint16_t decodeUint16( char *data ); 
-
-  /**
-   * Encode 8 bit value into 8 bit ascii buffer
-   *
-   * @param[in]  value The number to encode
-   * @param[out] buff  The buffer to put the result in (2 characters)
-   */
-  void encodeUint8( uint8_t value, char* buff );
-  
-  /**
-   * Encode 16 bit value into the output buffer
-   *
-   * @param[in]  value The number to encode
-   * @param[out] buff  The buffer to put the result in (4 characters)
-   */
-  void encodeUint16( uint16_t value, char* buff );
+  void clearData();
 
 };
 
