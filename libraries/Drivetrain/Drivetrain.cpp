@@ -1,5 +1,6 @@
 #include "Drivetrain.h"
 #include "util.h"
+#include <math.h>
 
 // Libraries need to include Arduino.h or WProgram.h to use Serial
 #if defined(ARDUINO) && ARDUINO >= 100
@@ -41,59 +42,46 @@ void Drivetrain::setup(int l_dir_fwd, int l_dir_rev, int l_speed,
 	setPower(0.0f, 0.0f);
 }
 
-void Drivetrain::arcade(float forward, float turn, bool squareInputs) {
-
+void Drivetrain::arcade(float xSpeed, float zRotation, bool squareInputs) {
+	xSpeed = clamp(xSpeed, (float)-1.0, (float)1.0);
+	zRotation = clamp(zRotation, (float)-1.0, (float)1.0);
+	
+	// Square the inputs (while preserving the sign) to increase fine control
+    // while permitting full power.
 	if (squareInputs) {
-		if (forward < 0) { 
-			forward *= -forward; 
-		}
-		else { 
-			forward *= forward; 
-		}
-
-		if (turn < 0) { 
-			turn *= -turn; 
-		}
-		else { 
-			turn *= turn; 
-		}
+		xSpeed = copysign(xSpeed*xSpeed, xSpeed);
+		zRotation = copysign(zRotation*zRotation,zRotation);
 	}
 
-	// (Ignore this) Preserve max input so a hard bank will still cause a significant response
-	//float maxInput = max(forward, turn);
-	float maxInput = forward;
-	float left;
-	float right;
+    float leftMotorOutput;
+    float rightMotorOutput;
 
-	if (forward >= 0) {
-		if (turn >= 0) {
-			// I
-			left = maxInput;
-			right = forward - turn;
-		}
-		else {
-			// II
-			left = forward + turn;
-			right = maxInput;
-		}
-	}
-	else {
-		if (turn >= 0) {
-			// III
-			left = forward + turn;
-			right = maxInput;
-		}
-		else {
-			// IV
-			left = maxInput;
-			right = forward - turn;
-		}
-	}
+	float maxInput = copysign(max(abs(xSpeed), abs(zRotation)), xSpeed);
 
-	left = clamp(left, -1.0f, 1.0f);
-	right = clamp(right, -1.0f, 1.0f);
+ 	if (xSpeed >= 0.0) {
+      // First quadrant, else second quadrant
+      if (zRotation >= 0.0) {
+        leftMotorOutput = maxInput;
+        rightMotorOutput = xSpeed - zRotation;
+      } else {
+        leftMotorOutput = xSpeed + zRotation;
+        rightMotorOutput = maxInput;
+      }
+    } else {
+      // Third quadrant, else fourth quadrant
+      if (zRotation >= 0.0) {
+        leftMotorOutput = xSpeed + zRotation;
+        rightMotorOutput = maxInput;
+      } else {
+        leftMotorOutput = maxInput;
+        rightMotorOutput = xSpeed - zRotation;
+      }
+    }
 
-	setPower(left, right);
+	leftMotorOutput = clamp(leftMotorOutput, (float)-1.0, (float)1.0);
+	rightMotorOutput = clamp(rightMotorOutput, (float)-1.0, (float)1.0);
+
+	setPower(leftMotorOutput, rightMotorOutput);
 }
 
 void Drivetrain::setPower(float left, float right) {
