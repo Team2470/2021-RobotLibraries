@@ -42,9 +42,24 @@ void Drivetrain::setup(int l_dir_fwd, int l_dir_rev, int l_speed,
 	setPower(0.0f, 0.0f);
 }
 
+// TODO make a private function
+float applyDeadband(float value, float deadband) {
+  if (abs(value) > deadband) {
+    if (value > 0.0) {
+      return (value - deadband) / (1.0 - deadband);
+    } else {
+      return (value + deadband) / (1.0 - deadband);
+    }
+  } else {
+    return 0.0;
+  }
+}
+
 void Drivetrain::arcade(float xSpeed, float zRotation, bool squareInputs) {
 	xSpeed = clamp(xSpeed, (float)-1.0, (float)1.0);
+  xSpeed = applyDeadband(xSpeed, 0.1);
 	zRotation = clamp(zRotation, (float)-1.0, (float)1.0);
+  zRotation = applyDeadband(zRotation, 0.1);
 	
 	// Square the inputs (while preserving the sign) to increase fine control
     // while permitting full power.
@@ -53,8 +68,8 @@ void Drivetrain::arcade(float xSpeed, float zRotation, bool squareInputs) {
 		zRotation = copysign(zRotation*zRotation,zRotation);
 	}
 
-    float leftMotorOutput;
-    float rightMotorOutput;
+  float leftMotorOutput;
+  float rightMotorOutput;
 
 	float maxInput = copysign(max(abs(xSpeed), abs(zRotation)), xSpeed);
 
@@ -77,7 +92,7 @@ void Drivetrain::arcade(float xSpeed, float zRotation, bool squareInputs) {
         rightMotorOutput = xSpeed - zRotation;
       }
     }
-
+  
 	leftMotorOutput = clamp(leftMotorOutput, (float)-1.0, (float)1.0);
 	rightMotorOutput = clamp(rightMotorOutput, (float)-1.0, (float)1.0);
 
