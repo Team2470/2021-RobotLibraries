@@ -165,14 +165,14 @@ void status_loop(DriverStation& dsStatus)
  */
 void teleop_loop(DriverStation& dsStatus) 
 {
-  float forward  = dsStatus.gamepad1.getAxisFloat(GamepadAxis::LeftY);
-  float turn = dsStatus.gamepad1.getAxisFloat(GamepadAxis::RightX); 
+  float forward  = dsStatus.gamepad.getAxisFloat(GamepadAxis::LeftY);
+  float turn = dsStatus.gamepad.getAxisFloat(GamepadAxis::RightX); 
 
-  bool btn_a     = dsStatus.gamepad1.getButton(GamepadButton::A);
-  bool btn_b     = dsStatus.gamepad1.getButton(GamepadButton::B);
-  bool btn_x     = dsStatus.gamepad1.getButton(GamepadButton::X);
-  bool btn_y     = dsStatus.gamepad1.getButton(GamepadButton::Y);
-  bool btn_start = dsStatus.gamepad1.getButton(GamepadButton::Start);
+  bool btn_a     = dsStatus.gamepad.getButton(GamepadButton::A);
+  bool btn_b     = dsStatus.gamepad.getButton(GamepadButton::B);
+  bool btn_x     = dsStatus.gamepad.getButton(GamepadButton::X);
+  bool btn_y     = dsStatus.gamepad.getButton(GamepadButton::Y);
+  bool btn_start = dsStatus.gamepad.getButton(GamepadButton::Start);
   
   if (btn_a && btn_a != btn_prev_a_) {
     CommandScheduler::getInstance().schedule(fast_blink);
