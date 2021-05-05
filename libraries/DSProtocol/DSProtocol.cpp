@@ -147,7 +147,7 @@ bool DSProtocol::decodeDSControlPacket(uint8_t buffer[], int buffer_len) {
 		}
 
 		// Data
-		uint8_t controlWord = &buffer[DS_CONTROL_CONTROL_INDEX];
+		uint8_t controlWord = buffer[DS_CONTROL_CONTROL_INDEX];
 
 		ds.mode      = controlWord & 0x0f;         // Bits 0->4
 		ds.enabled   = (controlWord & (1<< 4)) > 0;  // Bit 5
