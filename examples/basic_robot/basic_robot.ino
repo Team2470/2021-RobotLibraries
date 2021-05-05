@@ -154,8 +154,7 @@ void loop() {
  */
 void status_loop(DriverStation& dsStatus) 
 {
-  if (!dsStatus.enabled) Serial.println("Robot disabled, waiting to enable...");
-  if (dsStatus.enabled && dsStatus.mode == 0) Serial.println("Robot enabled. Teleop Mode");
+  if (!dsStatus.enabled) Serial.println("Robot disabled");
 }
 
 /**
